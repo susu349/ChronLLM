@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AETHER - 食谱管理</title>
+<script src="https://modao.cc/agent-py/static/source/js/tailwindcss.3.4.3.js"></script>
+<script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.1.0.7.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400&display=swap');
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #fafafa;
+  --bg-accent: #f5f5f5;
+  --text-primary: #000000;
+  --text-secondary: #333333;
+  --text-muted: #888888;
+  --accent-primary: #000000;
+  --border-color: #f0f0f0;
+  --border-thin: #e8e8e8;
+}
+body {
+  font-family: 'Inter', 'Noto Sans SC', sans-serif;
+  background-color: #ffffff;
+  color: #000000;
+}
+.thin-border {
+  border: 1px solid #f0f0f0;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #ffffff;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e8e8e8;
+}
+.fade-in {
+  animation: fadeIn 0.8s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+  z-index: 200;
+}
+.toast.show {
+  opacity: 1;
+}
+</style>
+</head>
+<body class="flex min-h-screen">
+<!-- 侧边导航栏 -->
+<aside class="w-20 lg:w-64 border-r border-gray-100 flex flex-col items-center lg:items-start p-6 fixed h-full z-50 bg-white">
+<div class="mb-8">
+<a href="/" class="cursor-pointer">
+<h1 class="text-2xl font-light tracking-[0.2em] hidden lg:block uppercase">Aether</h1>
+<div class="w-10 h-10 bg-black flex items-center justify-center lg:hidden">
+<span class="text-white text-xs">AE</span>
+</div>
+</a>
+</div>
+<nav class="flex-1 w-full space-y-6">
+<a class="flex items-center gap-4 text-gray-400 hover:text-black transition-colors group cursor-pointer" href="/">
+<iconify-icon class="text-2xl" icon="ph:house-line-light"></iconify-icon>
+<span class="text-sm font-light tracking-widest hidden lg:block group-hover:underline">主控面板</span>
+</a>
+<a class="flex items-center gap-4 text-black group cursor-pointer">
+<iconify-icon class="text-2xl" icon="ph:cooking-pot-light"></iconify-icon>
+<span class="text-sm font-light tracking-widest hidden lg:block group-hover:underline">食谱管理</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-gray-100 w-full">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white text-xs font-light">U</div>
+<div class="hidden lg:block">
+<p class="text-xs font-medium">用户</p>
+<p class="text-[10px] text-gray-400">AI管家 / 2026</p>
+</div>
+</div>
+</div>
+</aside>
+
+<!-- 主内容区 -->
+<main class="flex-1 ml-20 lg:ml-64 p-4 lg:p-10 fade-in">
+<!-- 顶部区域 -->
+<header class="flex flex-col lg:flex-row lg:items-end justify-between mb-8 gap-6">
+<div>
+<p class="text-xs uppercase tracking-[0.3em] text-gray-400 mb-2">Recipes & Nutrition</p>
+<h2 class="text-3xl lg:text-4xl font-thin leading-tight">食谱管理<br/><span class="text-gray-300">健康饮食，从这里开始</span></h2>
+</div>
+<div class="flex items-center gap-4">
+<a href="/" class="px-6 py-2 border border-gray-200 rounded-full text-sm hover:border-black transition-colors">
+返回主页
+</a>
+</div>
+</header>
+
+<!-- 标签导航 -->
+<div class="flex gap-4 mb-8">
+<button class="px-6 py-2 text-xs uppercase tracking-widest border-b-2 border-black pb-1" onclick="loadRecipes()" id="tabRecipes">食谱库</button>
+<button class="px-6 py-2 text-xs uppercase tracking-widest text-gray-400 hover:text-black transition-colors" onclick="loadWeeklyPlan()" id="tabPlan">每周计划</button>
+</div>
+
+<!-- 内容区域 -->
+<div class="grid grid-cols-1 gap-6" id="content">
+<div class="thin-border p-8 text-center">
+<p class="text-gray-400">加载中...</p>
+</div>
+</div>
+
+<div class="mt-8 text-center">
+<p class="text-[10px] text-gray-300 uppercase tracking-[0.5em]">System Version 4.0.2 / AETHER</p>
+</div>
+</main>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';
+
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type;
+  void t.offsetWidth;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function setActiveTab(tab) {
+  document.getElementById('tabRecipes').classList.remove('border-b-2', 'border-black');
+  document.getElementById('tabRecipes').classList.add('text-gray-400');
+  document.getElementById('tabPlan').classList.remove('border-b-2', 'border-black');
+  document.getElementById('tabPlan').classList.add('text-gray-400');
+
+  if (tab === 'recipes') {
+    document.getElementById('tabRecipes').classList.add('border-b-2', 'border-black');
+    document.getElementById('tabRecipes').classList.remove('text-gray-400');
+  } else {
+    document.getElementById('tabPlan').classList.add('border-b-2', 'border-black');
+    document.getElementById('tabPlan').classList.remove('text-gray-400');
+  }
+}
+
+async function loadRecipes() {
+  setActiveTab('recipes');
+  const container = document.getElementById('content');
+  container.innerHTML = '<div class="thin-border p-8 text-center"><p class="text-gray-400">加载中...</p></div>';
+  try {
+    const resp = await fetch(`${API}/api/recipes`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const recipes = await resp.json();
+
+    if (recipes.length === 0) {
+      container.innerHTML = '<div class="thin-border p-12 text-center"><p class="text-gray-400">暂无食谱</p></div>';
+      return;
+    }
+
+    let html = '';
+    for (const recipe of recipes) {
+      const nut = recipe.nutrition || {};
+      html += `
+        <div class="thin-border p-6 hover:shadow-xl transition-shadow duration-300">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h3 class="text-lg font-light mb-2">${escapeHtml(recipe.name)}</h3>
+              <p class="text-sm text-gray-400">${escapeHtml(recipe.description || '')}</p>
+            </div>
+            <div class="px-3 py-1 border border-black rounded-full text-xs">
+              ${nut.calories || 0} 卡
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-4 text-xs text-gray-400 mb-6">
+            <span>⏱️ ${(recipe.prep_time || 0) + (recipe.cook_time || 0)} 分钟</span>
+            <span>👥 ${recipe.servings || 2} 人份</span>
+            ${recipe.cuisine ? `<span>🏠 ${escapeHtml(recipe.cuisine)}</span>` : ''}
+            ${recipe.difficulty ? `<span>📊 ${escapeHtml(recipe.difficulty)}</span>` : ''}
+          </div>
+          <div class="grid grid-cols-5 gap-4">
+            <div class="text-center p-4 bg-gray-50 rounded">
+              <div class="text-lg font-light mb-1">${nut.calories || 0}</div>
+              <div class="text-xs text-gray-400 uppercase tracking-wider">热量</div>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded">
+              <div class="text-lg font-light mb-1">${nut.protein || 0}g</div>
+              <div class="text-xs text-gray-400 uppercase tracking-wider">蛋白质</div>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded">
+              <div class="text-lg font-light mb-1">${nut.carbs || 0}g</div>
+              <div class="text-xs text-gray-400 uppercase tracking-wider">碳水</div>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded">
+              <div class="text-lg font-light mb-1">${nut.fat || 0}g</div>
+              <div class="text-xs text-gray-400 uppercase tracking-wider">脂肪</div>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded">
+              <div class="text-lg font-light mb-1">${nut.fiber || 0}g</div>
+              <div class="text-xs text-gray-400 uppercase tracking-wider">纤维</div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    container.innerHTML = html;
+  } catch (e) {
+    console.error('Load recipes error:', e);
+    container.innerHTML = `<div class="thin-border p-12 text-center"><p class="text-gray-400">加载失败: ${e.message}</p></div>`;
+  }
+}
+
+async function loadWeeklyPlan() {
+  setActiveTab('plan');
+  const container = document.getElementById('content');
+  container.innerHTML = '<div class="thin-border p-8 text-center"><p class="text-gray-400">加载中...</p></div>';
+  try {
+    const resp = await fetch(`${API}/api/meal-plan/generate`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    const plan = data.plan;
+    const avg = data.avg_daily_nutrition || {};
+
+    let html = `
+      <div class="thin-border p-6 mb-6">
+        <h3 class="text-xs uppercase tracking-[0.4em] font-medium mb-6 border-b border-black pb-1 inline-block">本周平均每日营养</h3>
+        <div class="grid grid-cols-5 gap-4">
+          <div class="text-center p-4 bg-gray-50 rounded">
+            <div class="text-2xl font-thin mb-1">${avg.calories || 0}</div>
+            <div class="text-xs text-gray-400 uppercase tracking-wider">热量(卡)</div>
+          </div>
+          <div class="text-center p-4 bg-gray-50 rounded">
+            <div class="text-2xl font-thin mb-1">${avg.protein || 0}g</div>
+            <div class="text-xs text-gray-400 uppercase tracking-wider">蛋白质</div>
+          </div>
+          <div class="text-center p-4 bg-gray-50 rounded">
+            <div class="text-2xl font-thin mb-1">${avg.carbs || 0}g</div>
+            <div class="text-xs text-gray-400 uppercase tracking-wider">碳水</div>
+          </div>
+          <div class="text-center p-4 bg-gray-50 rounded">
+            <div class="text-2xl font-thin mb-1">${avg.fat || 0}g</div>
+            <div class="text-xs text-gray-400 uppercase tracking-wider">脂肪</div>
+          </div>
+          <div class="text-center p-4 bg-gray-50 rounded">
+            <div class="text-2xl font-thin mb-1">${avg.fiber || 0}g</div>
+            <div class="text-xs text-gray-400 uppercase tracking-wider">纤维</div>
+          </div>
+        </div>
+      </div>`;
+
+    for (const [dateStr, day] of Object.entries(plan || {})) {
+      html += `<div class="thin-border p-6 mb-6">`;
+      html += `<h3 class="text-lg font-light mb-6">${escapeHtml(day.day_name || '')} <span class="text-gray-400">(${escapeHtml(day.date || dateStr)})</span></h3>`;
+
+      for (const [mealType, recipe] of Object.entries({
+        'breakfast': day.breakfast,
+        'lunch': day.lunch,
+        'dinner': day.dinner
+      })) {
+        if (recipe) {
+          const mealName = {'breakfast': '早餐', 'lunch': '午餐', 'dinner': '晚餐'}[mealType] || mealType;
+          const nut = recipe.nutrition || {};
+          html += `
+            <div class="flex justify-between items-center p-4 bg-gray-50 rounded mb-3">
+              <div class="flex items-center gap-4">
+                <span class="text-xs text-gray-400 uppercase tracking-wider">${mealName}</span>
+                <span class="font-light">${escapeHtml(recipe.name)}</span>
+              </div>
+              <span class="text-sm text-gray-400">${nut.calories || 0} 卡</span>
+            </div>`;
+        }
+      }
+
+      html += `</div>`;
+    }
+
+    container.innerHTML = html;
+  } catch (e) {
+    console.error('Load meal plan error:', e);
+    container.innerHTML = `<div class="thin-border p-12 text-center"><p class="text-gray-400">加载失败: ${e.message}</p></div>`;
+  }
+}
+
+loadRecipes();
+</script>
+</body>
+</html>

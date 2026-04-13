@@ -1,0 +1,73 @@
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 数据库
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 测试和覆盖率
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# 文档构建
+docs/_build/
+site/
+
+# 日志
+*.log
+
+# 临时文件
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
+
+# 备份文件
+*.bak
+*.backup
+*.old
+app/templates/*.bak
+app/templates/*.bak2
+
+# 临时测试文件
+test_*.html
+test_*.py

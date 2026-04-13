@@ -1,0 +1,3280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AETHER - 2026 AI 个人管家</title>
+<script src="https://modao.cc/agent-py/static/source/js/tailwindcss.3.4.3.js"></script>
+<script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.1.0.7.js"></script>
+<script src="https://modao.cc/agent-py/static/source/js/echarts.min.5.4.3.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400&display=swap');
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #fafafa;
+  --bg-accent: #f5f5f5;
+  --text-primary: #000000;
+  --text-secondary: #333333;
+  --text-muted: #888888;
+  --accent-primary: #000000;
+  --border-color: #f0f0f0;
+  --border-thin: #e8e8e8;
+  --shadow-light: rgba(0, 0, 0, 0.04);
+  --shadow-hover: rgba(0, 0, 0, 0.08);
+}
+body {
+  font-family: 'Inter', 'Noto Sans SC', sans-serif;
+  background-color: #ffffff;
+  color: #000000;
+}
+.thin-border {
+  border: 1px solid #f0f0f0;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #ffffff;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e8e8e8;
+}
+.glass-effect {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.8);
+}
+.fade-in {
+  animation: fadeIn 0.8s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* Message Styles */
+.message {
+  max-width: 70%;
+  display: flex;
+  flex-direction: column;
+  animation: fadeInUp 0.4s ease-out;
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.message.butler {
+  align-self: flex-start;
+}
+.message.user {
+  align-self: flex-end;
+}
+.message-bubble {
+  padding: 14px 18px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  transition: all 0.15s ease;
+}
+.message.butler .message-bubble {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-bottom-left-radius: 6px;
+  color: var(--text-primary);
+}
+.message.user .message-bubble {
+  background: var(--text-primary);
+  border-bottom-right-radius: 6px;
+  color: var(--bg-primary);
+}
+.message-events {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  font-size: 12px;
+  border: 1px solid var(--border-color);
+}
+.message-events div {
+  padding: 4px 0;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.message-events .check {
+  color: var(--text-primary);
+  font-weight: 400;
+}
+.message-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  padding: 0 4px;
+}
+.message-image {
+  max-width: 100%;
+  border-radius: 10px;
+  margin-top: 8px;
+  cursor: pointer;
+}
+/* Typing Indicator */
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 4px 0;
+}
+.typing-indicator span {
+  width: 6px;
+  height: 6px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  animation: typing 1s infinite ease-in-out;
+}
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes typing {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-6px); }
+}
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal-overlay.show {
+  display: flex;
+}
+.modal {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 28px;
+  width: 90%;
+  max-width: 420px;
+  max-height: 85vh;
+  overflow-y: auto;
+  animation: modalFadeIn 0.2s ease-out;
+}
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+.modal h3 {
+  font-size: 16px;
+  font-weight: 400;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+.modal label {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 16px 0 6px;
+}
+.modal input,
+.modal select,
+.modal textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 300;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.modal input:focus,
+.modal select:focus,
+.modal textarea:focus {
+  border-color: var(--text-primary);
+}
+.modal textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+  justify-content: flex-end;
+}
+.modal-actions button {
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.btn-cancel {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+.btn-cancel:hover {
+  border-color: var(--text-primary);
+}
+.btn-save {
+  background: var(--text-primary);
+  border: 1px solid var(--text-primary);
+  color: var(--bg-primary);
+}
+.btn-save:hover {
+  opacity: 0.8;
+}
+.btn-delete {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  margin-right: auto;
+}
+.btn-delete:hover {
+  border-color: var(--text-primary);
+}
+/* Completion Slider */
+.completion-display {
+  text-align: center;
+  font-size: 32px;
+  font-weight: 200;
+  color: var(--text-primary);
+  margin: 12px 0;
+}
+.completion-slider {
+  width: 100%;
+  height: 2px;
+  -webkit-appearance: none;
+  background: var(--border-color);
+  border-radius: 2px;
+  outline: none;
+}
+.completion-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--text-primary);
+  border-radius: 50%;
+  cursor: pointer;
+}
+/* Side Panel */
+.side-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.2);
+  display: none;
+  z-index: 100;
+}
+.side-overlay.show {
+  display: block;
+}
+.side-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 420px;
+  max-width: 90vw;
+  height: 100vh;
+  background: var(--bg-primary);
+  border-left: 1px solid var(--border-color);
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  z-index: 101;
+  display: flex;
+  flex-direction: column;
+}
+.side-panel.open {
+  transform: translateX(0);
+}
+.side-panel-header {
+  padding: 28px 28px 20px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.side-panel-header h3 {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+.side-panel-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 20px;
+  padding: 4px;
+  transition: color 0.15s ease;
+}
+.side-panel-close:hover {
+  color: var(--text-primary);
+}
+.side-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 28px;
+}
+.side-panel-body::-webkit-scrollbar {
+  width: 3px;
+}
+.side-panel-body::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+}
+.side-panel-footer {
+  padding: 20px 28px 28px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+/* Settings Tabs */
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 28px;
+  flex-wrap: wrap;
+}
+.settings-tab {
+  padding: 12px 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+  font-weight: 400;
+}
+.settings-tab.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--text-primary);
+}
+.settings-tab:hover {
+  color: var(--text-primary);
+}
+.settings-tab-content {
+  display: none;
+}
+.settings-tab-content.active {
+  display: block;
+}
+.settings-section {
+  margin-bottom: 28px;
+}
+.settings-section h4 {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+.setting-item {
+  margin-bottom: 16px;
+}
+.setting-item label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  font-weight: 400;
+}
+.setting-item input,
+.setting-item select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  font-weight: 300;
+}
+.setting-item input:focus,
+.setting-item select:focus {
+  border-color: var(--text-primary);
+}
+.setting-item .hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.password-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.password-toggle input {
+  flex: 1;
+}
+.toggle-vis {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  color: var(--text-muted);
+}
+/* Identity & Style Options */
+.identity-option,
+.style-option {
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+.identity-option:hover,
+.style-option:hover {
+  border-color: var(--text-primary);
+}
+.theme-text-primary {
+  color: var(--text-primary);
+}
+.theme-text-muted {
+  color: var(--text-muted);
+}
+/* Toast & Notifications */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+  z-index: 200;
+}
+.toast.show {
+  opacity: 1;
+}
+.notif-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  transform: translateY(-100%);
+  transition: transform 0.25s ease;
+  z-index: 150;
+  font-size: 13px;
+  font-weight: 400;
+}
+.notif-banner.show {
+  transform: translateY(0);
+}
+.notif-close {
+  background: none;
+  border: none;
+  color: var(--bg-primary);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 0;
+}
+/* Plan Panel */
+.plan-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+.plan-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-bottom: 4px;
+}
+.plan-title {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 300;
+}
+.plan-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+/* Notes Panel */
+.note-card {
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.note-card:hover {
+  border-color: var(--text-primary);
+}
+.note-title {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.note-content {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.note-meta {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.note-tag {
+  padding: 2px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+/* Stats Panel */
+.stat-card {
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+.stat-card-title {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.stat-card-value {
+  font-size: 32px;
+  font-weight: 200;
+  color: var(--text-primary);
+}
+/* Agent Status */
+.agent-card {
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+.agent-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.agent-icon {
+  font-size: 18px;
+}
+.agent-name {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+.agent-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-left: auto;
+}
+.agent-status-dot.active {
+  background: #000;
+}
+.agent-status-dot.idle {
+  background: #999;
+}
+.agent-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+/* Smart Suggestions */
+.theme-suggestion-card {
+  padding: 14px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+/* Timeline Tree */
+.tree-year {
+  margin-bottom: 8px;
+}
+.tree-year-header {
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+  user-select: none;
+}
+.tree-year-header:hover {
+  background: var(--bg-accent);
+}
+.tree-year-header .arrow {
+  transition: transform 0.2s ease;
+  font-size: 8px;
+  color: var(--text-muted);
+  width: 12px;
+  text-align: center;
+}
+.tree-year-header .arrow.open {
+  transform: rotate(90deg);
+}
+.tree-year-header .badge {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--text-muted);
+}
+.tree-months {
+  display: none;
+  padding-left: 12px;
+}
+.tree-months.open {
+  display: block;
+}
+.tree-month-header {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+  user-select: none;
+}
+.tree-month-header:hover {
+  background: var(--bg-accent);
+}
+.tree-month-header .arrow {
+  transition: transform 0.2s ease;
+  font-size: 8px;
+  color: var(--text-muted);
+  width: 12px;
+  text-align: center;
+}
+.tree-month-header .arrow.open {
+  transform: rotate(90deg);
+}
+.tree-days {
+  display: none;
+  padding-left: 8px;
+}
+.tree-days.open {
+  display: block;
+}
+.tree-day {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+  user-select: none;
+}
+.tree-day:hover {
+  background: var(--bg-accent);
+}
+.tree-day.today {
+  color: var(--text-primary);
+  font-weight: 400;
+  background: var(--bg-tertiary);
+}
+.tree-day .day-events {
+  margin-left: auto;
+  font-size: 11px;
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 400;
+}
+.tree-day-detail {
+  display: none;
+  padding: 4px 12px 8px 20px;
+}
+.tree-day-detail.open {
+  display: block;
+}
+/* Event Items */
+.tree-event-item {
+  padding: 8px 10px;
+  font-size: 12px;
+  border-radius: 4px;
+  margin: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+.tree-event-item:hover {
+  background: var(--bg-accent);
+}
+.tree-event-item:hover .evt-actions {
+  opacity: 1;
+}
+.tree-event-item.urgent {
+  border-left: 2px solid var(--text-primary);
+}
+.tree-event-item.high {
+  border-left: 2px solid #666;
+}
+.tree-event-item.medium {
+  border-left: 2px solid #999;
+}
+.tree-event-item.low {
+  border-left: 2px solid #ccc;
+}
+.tree-event-item.completed {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+.tree-event-item .evt-time {
+  color: var(--text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+  min-width: 40px;
+  font-weight: 400;
+}
+.tree-event-item .evt-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-size: 12px;
+}
+.evt-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.evt-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 4px;
+  border-radius: 2px;
+  color: var(--text-muted);
+  transition: color 0.1s ease, background 0.1s ease;
+}
+.evt-actions button:hover {
+  background: var(--bg-tertiary);
+}
+.evt-actions .complete-btn:hover {
+  color: var(--text-primary);
+}
+.evt-actions .delete-btn:hover {
+  color: var(--text-primary);
+}
+.timeline-empty {
+  text-align: center;
+  padding: 24px 16px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+</style>
+</head>
+<body class="flex min-h-screen">
+<!-- 侧边导航栏 -->
+<aside class="w-20 lg:w-64 border-r border-gray-100 flex flex-col items-center lg:items-start p-6 fixed h-full z-50 bg-white">
+<div class="mb-8">
+<h1 class="text-2xl font-light tracking-[0.2em] hidden lg:block uppercase">Aether</h1>
+<div class="w-10 h-10 bg-black flex items-center justify-center lg:hidden">
+<span class="text-white text-xs">AE</span>
+</div>
+</div>
+<nav class="flex-1 w-full space-y-6">
+<a class="flex items-center gap-4 text-black group cursor-pointer" onclick="showSection('home')">
+<iconify-icon class="text-2xl" icon="ph:house-line-light"></iconify-icon>
+<span class="text-sm font-light tracking-widest hidden lg:block group-hover:underline">主控面板</span>
+</a>
+<a class="flex items-center gap-4 text-gray-400 hover:text-black transition-colors group cursor-pointer" onclick="showSection('timeline')">
+<iconify-icon class="text-2xl" icon="ph:calendar-blank-light"></iconify-icon>
+<span class="text-sm font-light tracking-widest hidden lg:block group-hover:underline">多维日程</span>
+</a>
+<a class="flex items-center gap-4 text-gray-400 hover:text-black transition-colors group cursor-pointer" onclick="openNotes()">
+<iconify-icon class="text-2xl" icon="ph:note-pencil-light"></iconify-icon>
+<span class="text-sm font-light tracking-widest hidden lg:block group-hover:underline">记事板</span>
+</a>
+<a class="flex items-center gap-4 text-gray-400 hover:text-black transition-colors group cursor-pointer" onclick="openStats()">
+<iconify-icon class="text-2xl" icon="ph:chart-line-up-light"></iconify-icon>
+<span class="text-sm font-light tracking-widest hidden lg:block group-hover:underline">数据统计</span>
+</a>
+<a class="flex items-center gap-4 text-gray-400 hover:text-black transition-colors group cursor-pointer" onclick="openRecipes()">
+<iconify-icon class="text-2xl" icon="ph:cooking-pot-light"></iconify-icon>
+<span class="text-sm font-light tracking-widest hidden lg:block group-hover:underline">食谱管理</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-gray-100 w-full">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white text-xs font-light">U</div>
+<div class="hidden lg:block">
+<p class="text-xs font-medium" id="userNameDisplay">用户</p>
+<p class="text-[10px] text-gray-400">AI管家 / 2026</p>
+</div>
+</div>
+</div>
+</aside>
+
+<!-- 主内容区 -->
+<main class="flex-1 ml-20 lg:ml-64 p-4 lg:p-10 fade-in">
+<!-- 顶部状态与 AI 欢迎语 -->
+<header class="flex flex-col lg:flex-row lg:items-end justify-between mb-8 gap-6">
+<div>
+<p class="text-xs uppercase tracking-[0.3em] text-gray-400 mb-2" id="currentDateDisplay"></p>
+<h2 class="text-3xl lg:text-4xl font-thin leading-tight" id="greetingDisplay">您好<br/><span class="text-gray-300">今天有什么需要我帮助的吗？</span></h2>
+</div>
+<div class="flex items-center gap-6 border-l border-gray-100 pl-8 h-16">
+<div class="text-right">
+<p class="text-xs text-gray-400 uppercase tracking-widest mb-1">今日安排</p>
+<p class="text-xl font-light"><span id="statTotal">0</span> <span class="text-sm text-gray-400">项</span></p>
+</div>
+<div class="text-right">
+<p class="text-xs text-gray-400 uppercase tracking-widest mb-1">已完成</p>
+<p class="text-xl font-light"><span id="statCompleted">0</span> <span class="text-sm text-gray-400">项</span></p>
+</div>
+<div class="flex gap-2">
+<button class="w-10 h-10 border border-gray-200 rounded flex items-center justify-center hover:border-black transition-colors" onclick="openPlan()" title="今日规划">
+<iconify-icon class="text-lg" icon="ph:calendar-check-light"></iconify-icon>
+</button>
+<button class="w-10 h-10 border border-gray-200 rounded flex items-center justify-center hover:border-black transition-colors" onclick="openSettings()" title="设置">
+<iconify-icon class="text-lg" icon="ph:gear-light"></iconify-icon>
+</button>
+</div>
+</div>
+</header>
+
+<!-- 栅格布局 -->
+<div class="grid grid-cols-12 gap-6" id="mainGrid">
+
+<!-- 左侧核心：聊天区域 -->
+<div class="col-span-12 lg:col-span-8 space-y-6" id="homeSection">
+<!-- 聊天消息区 -->
+<section class="thin-border p-6 hover:shadow-xl transition-shadow duration-500 min-h-[400px] flex flex-col">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-xs uppercase tracking-[0.4em] font-medium border-b border-black pb-1">AI 对话 / Chat</h3>
+<div class="flex gap-4">
+<button class="text-[10px] uppercase tracking-widest text-black underline cursor-pointer" onclick="clearChat()">清空</button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar" id="messages" style="max-height: 350px;">
+<div class="text-center text-gray-400 text-sm py-8">开始与 AI 管家对话...</div>
+</div>
+</section>
+
+<!-- 快捷操作 -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="thin-border p-5 hover:bg-black hover:text-white transition-all duration-300 cursor-pointer group" onclick="oneClickPerfectDay()">
+<div class="flex justify-between items-start mb-3">
+<iconify-icon class="text-2xl" icon="ph:sparkle-light"></iconify-icon>
+<span class="text-[10px] tracking-widest opacity-40 group-hover:opacity-60">快捷</span>
+</div>
+<h4 class="text-lg font-light mb-1">一键完美日</h4>
+<p class="text-xs font-extralight leading-relaxed opacity-60 group-hover:opacity-100">智能生成今日规划、天气、菜单推荐...</p>
+</div>
+<div class="thin-border p-5 hover:bg-black hover:text-white transition-all duration-300 cursor-pointer group" onclick="scheduleDay()">
+<div class="flex justify-between items-start mb-3">
+<iconify-icon class="text-2xl" icon="ph:magic-wand-light"></iconify-icon>
+<span class="text-[10px] tracking-widest opacity-40 group-hover:opacity-60">AI编排</span>
+</div>
+<h4 class="text-lg font-light mb-1">AI 日程编排</h4>
+<p class="text-xs font-extralight leading-relaxed opacity-60 group-hover:opacity-100">根据您的习惯智能安排今日日程...</p>
+</div>
+</section>
+</div>
+
+<!-- 时间线区域 -->
+<div class="col-span-12 lg:col-span-8 space-y-6 hidden" id="timelineSection">
+<section class="thin-border p-6 hover:shadow-xl transition-shadow duration-500 min-h-[400px]">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-xs uppercase tracking-[0.4em] font-medium border-b border-black pb-1">时间线 / Timeline</h3>
+<div class="flex gap-4">
+<button class="text-[10px] uppercase tracking-widest text-gray-400 hover:text-black cursor-pointer" onclick="refreshTimeline()">刷新</button>
+</div>
+</div>
+<div class="overflow-y-auto custom-scrollbar" id="timelineTree" style="max-height: 350px;">
+<div class="timeline-empty">加载中...</div>
+</div>
+</section>
+</div>
+
+<!-- 右侧：生活助理模块 -->
+<div class="col-span-12 lg:col-span-4 space-y-6">
+<!-- 今日待办 -->
+<div class="thin-border p-6">
+<h3 class="text-xs uppercase tracking-[0.4em] font-medium mb-6 border-b border-black pb-1 inline-block">待办清单 / To-do</h3>
+<div class="space-y-4" id="todayEventsList">
+<div class="text-center text-gray-400 text-xs py-4">暂无待办</div>
+</div>
+<button class="mt-4 w-full py-3 border border-dashed border-gray-200 text-[10px] uppercase tracking-widest text-gray-400 hover:border-black hover:text-black transition-all cursor-pointer" onclick="openAddEventModal()">
++ 添加新事件
+</button>
+</div>
+
+<!-- 快捷功能 -->
+<div class="thin-border p-6">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-xs uppercase tracking-[0.4em] font-medium border-b border-black pb-1">快捷工具 / Tools</h3>
+<iconify-icon class="text-xl" icon="ph:toolbox-light"></iconify-icon>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2 cursor-pointer hover:opacity-70" onclick="checkWeather()">
+<p class="text-[10px] text-gray-400 uppercase">查天气</p>
+<p class="text-sm font-light">🌤️ 天气查询</p>
+</div>
+<div class="space-y-2 cursor-pointer hover:opacity-70" onclick="checkMenu()">
+<p class="text-[10px] text-gray-400 uppercase">推荐</p>
+<p class="text-sm font-light">🍽️ 今日菜单</p>
+</div>
+<div class="space-y-2 cursor-pointer hover:opacity-70" onclick="smartCheck()">
+<p class="text-[10px] text-gray-400 uppercase">检查</p>
+<p class="text-sm font-light">🔍 智能检查</p>
+</div>
+<div class="space-y-2 cursor-pointer hover:opacity-70" onclick="smartRelax()">
+<p class="text-[10px] text-gray-400 uppercase">放松</p>
+<p class="text-sm font-light">💆 放松模式</p>
+</div>
+</div>
+</div>
+
+<!-- 财富概览 (展示用) -->
+<div class="thin-border p-6">
+<h3 class="text-xs uppercase tracking-[0.4em] font-medium mb-4 border-b border-black pb-1 inline-block">数据概览 / Stats</h3>
+<div id="wealthChart" style="width: 100%; height: 140px;"></div>
+<div class="mt-4 flex justify-between items-center">
+<div>
+<p class="text-[10px] text-gray-400 uppercase">本周完成率</p>
+<p class="text-xl font-thin" id="weeklyCompletion">--%</p>
+</div>
+<iconify-icon class="text-2xl" icon="ph:arrow-up-right-light"></iconify-icon>
+</div>
+</div>
+</div>
+</div>
+
+<!-- 底部输入区 -->
+<footer class="mt-8 p-6 bg-gray-50 flex flex-col gap-4">
+<div class="flex flex-wrap gap-2">
+<span class="px-4 py-2 border border-gray-200 rounded-full text-xs cursor-pointer hover:border-black transition-colors" onclick="quickSend('今天有什么安排？')">📋 今天安排</span>
+<span class="px-4 py-2 border border-gray-200 rounded-full text-xs cursor-pointer hover:border-black transition-colors" onclick="quickSend('帮我规划一下明天')">📅 规划明天</span>
+<span class="px-4 py-2 border border-gray-200 rounded-full text-xs cursor-pointer hover:border-black transition-colors" onclick="quickSend('提醒我明天上午9点开会')">⏰ 设置提醒</span>
+<span class="px-4 py-2 border border-gray-200 rounded-full text-xs cursor-pointer hover:border-black transition-colors" onclick="autoCompleteAll()">✅ 一键完成</span>
+</div>
+<div class="flex gap-3 items-end">
+<div class="flex-1 flex gap-3 items-center border border-gray-200 rounded-full px-4 py-2 bg-white hover:border-black transition-colors">
+<input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="handleImageSelect(event)">
+<button onclick="document.getElementById('imageInput').click()" class="text-gray-400 hover:text-black transition-colors" title="上传图片">📷</button>
+<input type="text" id="chatInput" class="flex-1 border-none outline-none text-sm" placeholder="告诉管家你的安排..." autocomplete="off">
+<div class="flex gap-2">
+<button onclick="scheduleDay()" class="px-4 py-1.5 text-xs border border-gray-200 rounded-full hover:border-black transition-colors" id="scheduleBtn">AI编排</button>
+<button onclick="sendMessage()" class="px-4 py-1.5 text-xs bg-black text-white rounded-full hover:opacity-80 transition-opacity" id="sendBtn">发送</button>
+</div>
+</div>
+</div>
+<div class="image-preview-container hidden" id="imagePreviewContainer">
+<div class="flex items-center gap-2">
+<img id="imagePreview" class="image-preview" style="max-height: 60px; border-radius: 4px;">
+<button class="image-preview-clear text-gray-400 hover:text-black" onclick="clearImagePreview()">&times;</button>
+</div>
+</div>
+</footer>
+
+<div class="mt-6 text-center">
+<p class="text-[10px] text-gray-300 uppercase tracking-[0.5em]">System Version 4.0.2 / AETHER</p>
+</div>
+</main>
+
+<!-- Event Detail Modal -->
+<div class="modal-overlay" id="eventDetailModal">
+<div class="modal" style="max-width:500px;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+<h3 id="detailTitle" style="margin:0;">事件详情</h3>
+<button onclick="closeEventDetailModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);">&times;</button>
+</div>
+<div id="eventDetailContent">
+</div>
+<div class="modal-actions">
+<button class="btn-cancel" onclick="openEditFromDetail()">编辑</button>
+<button class="btn-save" onclick="closeEventDetailModal()">关闭</button>
+</div>
+</div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+<div class="modal" style="max-width:500px;">
+<h3 id="modalTitle">编辑事件</h3>
+<input type="hidden" id="editId">
+<label>标题</label>
+<input type="text" id="editTitle">
+<label>日期</label>
+<input type="date" id="editDate">
+<label>开始时间</label>
+<input type="time" id="editTime">
+<label>时长 (分钟)</label>
+<input type="number" id="editDuration" min="5" max="480" value="30">
+<label>优先级</label>
+<select id="editPriority">
+<option value="urgent">紧急</option>
+<option value="high">高</option>
+<option value="medium" selected>中</option>
+<option value="low">低</option>
+</select>
+<label>分类</label>
+<select id="editCategory">
+<option value="">无</option>
+<option value="work">工作</option>
+<option value="personal">个人</option>
+<option value="meeting">会议</option>
+<option value="exercise">运动</option>
+<option value="meal">餐饮</option>
+<option value="rest">休息</option>
+</select>
+<label>地点</label>
+<input type="text" id="editLocation" placeholder="地点">
+<label>参与人员 (逗号分隔)</label>
+<input type="text" id="editParticipants" placeholder="例如: 张三, 李四">
+<label>描述</label>
+<textarea id="editDesc" placeholder="详细描述" style="min-height:60px;"></textarea>
+<label>任务流程/步骤 (每行一个步骤)</label>
+<textarea id="editTaskSteps" placeholder="1. 第一步&#10;2. 第二步" style="min-height:80px;"></textarea>
+<label>备注</label>
+<textarea id="editNotes" placeholder="其他备注信息" style="min-height:60px;"></textarea>
+<div class="modal-actions">
+<button class="btn-delete" onclick="deleteEventFromModal()">删除</button>
+<button class="btn-cancel" onclick="closeModal()">取消</button>
+<button class="btn-save" onclick="saveEvent()">保存</button>
+</div>
+</div>
+</div>
+
+<!-- Add Event Modal -->
+<div class="modal-overlay" id="addEventModal">
+<div class="modal" style="max-width:500px;">
+<h3>添加新事件</h3>
+<label>标题</label>
+<input type="text" id="addEventTitle" placeholder="例如: 开会">
+<label>日期</label>
+<input type="date" id="addEventDate">
+<label>开始时间</label>
+<input type="time" id="addEventTime">
+<label>时长 (分钟)</label>
+<input type="number" id="addEventDuration" min="5" max="480" value="30">
+<label>优先级</label>
+<select id="addEventPriority">
+<option value="urgent">紧急</option>
+<option value="high">高</option>
+<option value="medium" selected>中</option>
+<option value="low">低</option>
+</select>
+<label>分类</label>
+<select id="addEventCategory">
+<option value="">无</option>
+<option value="work">工作</option>
+<option value="personal">个人</option>
+<option value="meeting">会议</option>
+<option value="exercise">运动</option>
+<option value="meal">餐饮</option>
+<option value="rest">休息</option>
+</select>
+<label>地点</label>
+<input type="text" id="addEventLocation" placeholder="地点">
+<label>参与人员 (逗号分隔)</label>
+<input type="text" id="addEventParticipants" placeholder="例如: 张三, 李四">
+<label>描述</label>
+<textarea id="addEventDesc" placeholder="详细描述" style="min-height:60px;"></textarea>
+<label>任务流程/步骤 (每行一个步骤)</label>
+<textarea id="addEventTaskSteps" placeholder="1. 第一步&#10;2. 第二步" style="min-height:80px;"></textarea>
+<label>备注</label>
+<textarea id="addEventNotes" placeholder="其他备注信息" style="min-height:60px;"></textarea>
+<div class="modal-actions">
+<button class="btn-cancel" onclick="closeAddEventModal()">取消</button>
+<button class="btn-save" onclick="addEvent()">添加</button>
+</div>
+</div>
+</div>
+
+<!-- Completion Ask Modal -->
+<div class="modal-overlay" id="completionModal">
+<div class="modal">
+<h3>事件完成度评估</h3>
+<input type="hidden" id="completionEventId">
+<p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;" id="completionEventTitle"></p>
+<label>完成度</label>
+<div class="completion-display" id="completionValue">50%</div>
+<input type="range" class="completion-slider" id="completionSlider" min="0" max="100" value="50" oninput="updateCompletionDisplay()">
+<label>总结</label>
+<textarea id="completionSummary" placeholder="做了什么？有什么收获？"></textarea>
+<label>反思/遇到的困难</label>
+<textarea id="completionReflection" placeholder="有什么可以改进的？遇到了什么困难？"></textarea>
+<div class="modal-actions">
+<button class="btn-cancel" onclick="skipCompletion()">跳过</button>
+<button class="btn-save" onclick="saveCompletion()">保存</button>
+</div>
+</div>
+</div>
+
+<!-- Note Edit Modal -->
+<div class="modal-overlay" id="noteModal">
+<div class="modal" style="max-width:480px;">
+<h3 id="noteModalTitle">新建笔记</h3>
+<input type="hidden" id="editNoteId">
+<label>标题</label>
+<input type="text" id="noteTitle" placeholder="笔记标题">
+<label>类型</label>
+<select id="noteType">
+<option value="general">普通</option>
+<option value="plan">规划</option>
+<option value="summary">总结</option>
+<option value="reflection">反思</option>
+</select>
+<label>内容</label>
+<textarea id="noteContent" placeholder="笔记内容..." style="min-height:120px;"></textarea>
+<label>标签 (逗号分隔)</label>
+<input type="text" id="noteTags" placeholder="例如: 工作,学习,重要">
+<div class="modal-actions">
+<button class="btn-cancel" onclick="closeNoteModal()">取消</button>
+<button class="btn-save" onclick="saveNote()">保存</button>
+</div>
+</div>
+</div>
+
+<!-- Custom Identity Modal -->
+<div class="modal-overlay" id="customIdentityModal">
+<div class="modal" style="max-width:480px;">
+<h3>自定义身份</h3>
+<label>身份名称</label>
+<input type="text" id="customIdentityName" placeholder="例如: 创业者">
+<label>描述</label>
+<textarea id="customIdentityDesc" placeholder="描述这个身份的特点..."></textarea>
+<label>起床时间</label>
+<input type="time" id="customWakeUpTime">
+<label>早餐时间</label>
+<input type="time" id="customBreakfastTime">
+<label>工作开始</label>
+<input type="time" id="customWorkStartTime">
+<label>午餐时间</label>
+<input type="time" id="customLunchTime">
+<label>工作结束</label>
+<input type="time" id="customWorkEndTime">
+<label>晚餐时间</label>
+<input type="time" id="customDinnerTime">
+<label>睡觉时间</label>
+<input type="time" id="customBedTime">
+<label>事件缓冲（分钟）</label>
+<input type="number" id="customBufferMinutes" min="0" max="60" value="15">
+<label>工作块时长（分钟）</label>
+<input type="number" id="customWorkBlock" min="15" max="180" value="60">
+<label>工作内容称呼</label>
+<input type="text" id="customWorkLabel" placeholder="工作">
+<label>安排运动</label>
+<select id="customIncludeExercise">
+<option value="true">是</option>
+<option value="false">否</option>
+</select>
+<label>运动时长（分钟）</label>
+<input type="number" id="customExerciseDuration" min="15" max="180" value="45">
+<label>运动时间</label>
+<select id="customExerciseTime">
+<option value="morning">早上</option>
+<option value="evening">晚上</option>
+</select>
+<label>深度工作优先</label>
+<select id="customDeepWorkFirst">
+<option value="true">是</option>
+<option value="false">否</option>
+</select>
+<label>启用番茄钟</label>
+<select id="customPomodoro">
+<option value="true">是</option>
+<option value="false">否</option>
+</select>
+<div class="modal-actions">
+<button class="btn-cancel" onclick="closeCustomIdentity()">取消</button>
+<button class="btn-save" onclick="saveCustomIdentity()">保存</button>
+</div>
+</div>
+</div>
+
+<!-- Custom Butler Modal -->
+<div class="modal-overlay" id="customButlerModal">
+<div class="modal" style="max-width:480px;">
+<h3>自定义管家风格</h3>
+<label>风格名称</label>
+<input type="text" id="customStyleName" placeholder="例如: 武侠">
+<label>描述</label>
+<textarea id="customStyleDesc" placeholder="描述这个风格的特点..."></textarea>
+<label>问候语</label>
+<input type="text" id="customGreeting" placeholder="您好，{user_name}。">
+<label>称呼用户</label>
+<input type="text" id="customCallUser" placeholder="{user_name}">
+<label>自称</label>
+<input type="text" id="customSelfCall" placeholder="我">
+<label>语气</label>
+<select id="customTone">
+<option value="professional">专业</option>
+<option value="casual">随意</option>
+<option value="formal">正式</option>
+</select>
+<label>Emoji</label>
+<input type="text" id="customEmoji" placeholder="🎩">
+<label>主题色</label>
+<input type="color" id="customColor" value="#000000">
+<div class="modal-actions">
+<button class="btn-cancel" onclick="closeCustomButler()">取消</button>
+<button class="btn-save" onclick="saveCustomButler()">保存</button>
+</div>
+</div>
+</div>
+
+<!-- Settings Panel -->
+<div class="side-overlay" id="settingsOverlay" onclick="closeSettings()"></div>
+<div class="side-panel" id="settingsPanel">
+<div class="side-panel-header">
+<h3>设置</h3>
+<button class="side-panel-close" onclick="closeSettings()">&times;</button>
+</div>
+<div class="settings-tabs">
+<div class="settings-tab active" onclick="switchSettingsTab('general', this)">通用</div>
+<div class="settings-tab" onclick="switchSettingsTab('identity', this)">身份选择</div>
+<div class="settings-tab" onclick="switchSettingsTab('butler', this)">管家风格</div>
+<div class="settings-tab" onclick="switchSettingsTab('routine', this)">日常习惯</div>
+<div class="settings-tab" onclick="switchSettingsTab('agents', this)">🤖 智能体</div>
+</div>
+<div class="side-panel-body">
+<div class="settings-tab-content active" id="tab-general">
+<div class="settings-section">
+<h4>管家</h4>
+<div class="setting-item">
+<label>称呼</label>
+<input type="text" id="settingUserName" placeholder="少爷">
+<div class="hint">管家对您的称呼</div>
+</div>
+</div>
+<div class="settings-section">
+<h4>LLM API</h4>
+<div class="setting-item">
+<label>API Key</label>
+<div class="password-toggle">
+<input type="password" id="settingApiKey">
+<button class="toggle-vis" onclick="togglePassword('settingApiKey', this)">👁</button>
+</div>
+</div>
+<div class="setting-item">
+<label>API Base URL</label>
+<input type="text" id="settingApiUrl" placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1">
+<div class="hint">OpenAI 兼容接口地址</div>
+</div>
+<div class="setting-item">
+<label>模型</label>
+<input type="text" id="settingApiModel" placeholder="qwen3.6-plus">
+<div class="hint">模型名称</div>
+</div>
+</div>
+<div class="settings-section">
+<h4>提醒</h4>
+<div class="setting-item">
+<label>提前提醒（分钟）</label>
+<input type="number" id="settingReminderMinutes" min="1" max="60" value="10">
+</div>
+</div>
+</div>
+<div class="settings-tab-content" id="tab-identity">
+<div class="settings-section">
+<h4>选择您的身份</h4>
+<div style="display:grid;grid-template-columns:1fr;gap:12px;">
+<div class="identity-option" onclick="selectIdentity('student')">
+<div style="font-size:20px;margin-bottom:6px;">📚</div>
+<div class="theme-text-primary" style="font-weight:400;">学生</div>
+<div class="theme-text-muted" style="font-size:12px;margin-top:4px;">早八晚十，学习为主</div>
+</div>
+<div class="identity-option" onclick="selectIdentity('worker')">
+<div style="font-size:20px;margin-bottom:6px;">💼</div>
+<div class="theme-text-primary" style="font-weight:400;">上班族</div>
+<div class="theme-text-muted" style="font-size:12px;margin-top:4px;">朝九晚五，工作为重</div>
+</div>
+<div class="identity-option" onclick="selectIdentity('freelancer')">
+<div style="font-size:20px;margin-bottom:6px;">🎯</div>
+<div class="theme-text-primary" style="font-weight:400;">自由职业者</div>
+<div class="theme-text-muted" style="font-size:12px;margin-top:4px;">灵活安排，效率优先</div>
+</div>
+<div class="identity-option" onclick="selectIdentity('retired')">
+<div style="font-size:20px;margin-bottom:6px;">🌴</div>
+<div class="theme-text-primary" style="font-weight:400;">退休/悠闲</div>
+<div class="theme-text-muted" style="font-size:12px;margin-top:4px;">享受生活，健康第一</div>
+</div>
+</div>
+<div style="margin-top:16px;">
+<div id="currentIdentityDisplay" class="theme-text-muted" style="font-size:13px;"></div>
+</div>
+<div style="margin-top:16px;">
+<button onclick="openCustomIdentity()" style="width:100%;background:var(--text-primary);color:var(--bg-primary);border:none;padding:12px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:400;">✏️ 自定义身份</button>
+</div>
+</div>
+</div>
+<div class="settings-tab-content" id="tab-butler">
+<div class="settings-section">
+<h4>选择管家风格</h4>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+<div class="style-option" onclick="selectButlerStyle('classic')">
+<div style="font-size:20px;margin-bottom:6px;">🎩</div>
+<div class="theme-text-primary" style="font-weight:400;">经典管家</div>
+<div class="theme-text-muted" style="font-size:12px;margin-top:4px;">专业、稳重、优雅</div>
+</div>
+<div class="style-option" onclick="selectButlerStyle('catgirl')">
+<div style="font-size:20px;margin-bottom:6px;">🐱</div>
+<div class="theme-text-primary" style="font-weight:400;">猫娘</div>
+<div class="theme-text-muted" style="font-size:12px;margin-top:4px;">可爱、活泼、喵~</div>
+</div>
+<div class="style-option" onclick="selectButlerStyle('maid')">
+<div style="font-size:20px;margin-bottom:6px;">🎀</div>
+<div class="theme-text-primary" style="font-weight:400;">女仆</div>
+<div class="theme-text-muted" style="font-size:12px;margin-top:4px;">恭敬、温柔、周到</div>
+</div>
+<div class="style-option" onclick="selectButlerStyle('butler')">
+<div style="font-size:20px;margin-bottom:6px;">☕</div>
+<div class="theme-text-primary" style="font-weight:400;">执事</div>
+<div class="theme-text-muted" style="font-size:12px;margin-top:4px;">英式管家、完美优雅</div>
+</div>
+<div class="style-option" onclick="selectButlerStyle('tsundere')">
+<div style="font-size:20px;margin-bottom:6px;">😤</div>
+<div class="theme-text-primary" style="font-weight:400;">傲娇</div>
+<div class="theme-text-muted" style="font-size:12px;margin-top:4px;">嘴上不饶人，其实很关心</div>
+</div>
+<div class="style-option" onclick="selectButlerStyle('sister')">
+<div style="font-size:20px;margin-bottom:6px;">🌸</div>
+<div class="theme-text-primary" style="font-weight:400;">姐姐</div>
+<div class="theme-text-muted" style="font-size:12px;margin-top:4px;">温柔、体贴、包容</div>
+</div>
+<div class="style-option" onclick="selectButlerStyle('samurai')">
+<div style="font-size:20px;margin-bottom:6px;">⚔️</div>
+<div class="theme-text-primary" style="font-weight:400;">武士</div>
+<div class="theme-text-muted" style="font-size:12px;margin-top:4px;">忠诚、刚毅、守信</div>
+</div>
+<div class="style-option" onclick="selectButlerStyle('robot')">
+<div style="font-size:20px;margin-bottom:6px;">🤖</div>
+<div class="theme-text-primary" style="font-weight:400;">AI助手</div>
+<div class="theme-text-muted" style="font-size:12px;margin-top:4px;">高效、精准、不带感情</div>
+</div>
+</div>
+<div style="margin-top:16px;">
+<div id="currentStyleDisplay" class="theme-text-muted" style="font-size:13px;"></div>
+</div>
+<div style="margin-top:16px;">
+<button onclick="openCustomButlerStyle()" style="width:100%;background:var(--text-primary);color:var(--bg-primary);border:none;padding:12px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:400;">✏️ 自定义管家风格</button>
+</div>
+</div>
+</div>
+<div class="settings-tab-content" id="tab-routine">
+<div class="settings-section">
+<h4>作息时间</h4>
+<div class="setting-item">
+<label>起床时间</label>
+<input type="time" id="prefWakeUpTime">
+</div>
+<div class="setting-item">
+<label>早餐时间</label>
+<input type="time" id="prefBreakfastTime">
+</div>
+<div class="setting-item">
+<label>工作开始</label>
+<input type="time" id="prefWorkStartTime">
+</div>
+<div class="setting-item">
+<label>午餐时间</label>
+<input type="time" id="prefLunchTime">
+</div>
+<div class="setting-item">
+<label>工作结束</label>
+<input type="time" id="prefWorkEndTime">
+</div>
+<div class="setting-item">
+<label>晚餐时间</label>
+<input type="time" id="prefDinnerTime">
+</div>
+<div class="setting-item">
+<label>睡觉时间</label>
+<input type="time" id="prefBedTime">
+</div>
+</div>
+<div class="settings-section">
+<h4>规划偏好</h4>
+<div class="setting-item">
+<label>事件缓冲（分钟）</label>
+<input type="number" id="prefBufferMinutes" min="0" max="60" value="15">
+</div>
+<div class="setting-item">
+<label>安排运动</label>
+<select id="prefIncludeExercise">
+<option value="true">是</option>
+<option value="false">否</option>
+</select>
+</div>
+<div class="setting-item">
+<label>运动时长（分钟）</label>
+<input type="number" id="prefExerciseDuration" min="15" max="180" value="45">
+</div>
+<div class="setting-item">
+<label>运动时间</label>
+<select id="prefExerciseTime">
+<option value="morning">早上</option>
+<option value="evening">晚上</option>
+</select>
+</div>
+<div class="setting-item">
+<label>深度工作优先</label>
+<select id="prefDeepWorkFirst">
+<option value="true">是</option>
+<option value="false">否</option>
+</select>
+</div>
+</div>
+</div>
+<div class="settings-tab-content" id="tab-agents">
+<div class="settings-section">
+<h4>🤖 多智能体系统</h4>
+<div style="margin-bottom:16px;">
+<button onclick="refreshAgentStatus()" style="width:100%;background:var(--text-primary);color:var(--bg-primary);border:none;padding:12px;border-radius:4px;cursor:pointer;margin-bottom:8px;font-family:inherit;font-size:13px;font-weight:400;">🔄 刷新状态</button>
+<button onclick="triggerCEOOptimization()" style="width:100%;background:linear-gradient(135deg,#333,#000);color:var(--bg-primary);border:none;padding:12px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:400;">👨‍💼 触发CEO优化</button>
+</div>
+<div id="agentStatusContainer">
+<div style="text-align:center;color:var(--text-muted);padding:16px;">点击刷新查看状态</div>
+</div>
+</div>
+<div class="settings-section">
+<h4>⚙️ 全局设置</h4>
+<div class="setting-item">
+<label>CEO优化间隔（天）</label>
+<input type="number" id="ceoIntervalDays" min="1" max="30" value="10">
+</div>
+<div class="setting-item">
+<label>启用自动审计</label>
+<select id="autoAuditEnabled">
+<option value="true">是</option>
+<option value="false">否</option>
+</select>
+</div>
+<div class="setting-item">
+<label>嵌套评估深度</label>
+<input type="number" id="nestedEvalDepth" min="1" max="5" value="3">
+</div>
+</div>
+</div>
+</div>
+<div class="side-panel-footer">
+<button class="btn-cancel" onclick="closeSettings()">取消</button>
+<button class="btn-save" onclick="saveAllSettings()">保存</button>
+</div>
+</div>
+
+<!-- Plan Panel -->
+<div class="side-overlay" id="planOverlay" onclick="closePlan()"></div>
+<div class="side-panel" id="planPanel">
+<div class="side-panel-header">
+<h3>📅 今日规划</h3>
+<button class="side-panel-close" onclick="closePlan()">&times;</button>
+</div>
+<div class="side-panel-body" id="planBody">
+<div style="text-align:center;color:var(--text-muted);padding:32px;">加载中...</div>
+</div>
+</div>
+
+<!-- Notes Panel -->
+<div class="side-overlay" id="notesOverlay" onclick="closeNotes()"></div>
+<div class="side-panel" id="notesPanel">
+<div class="side-panel-header">
+<h3>📝 记事板</h3>
+<div style="display:flex;gap:6px;">
+<button onclick="openNewNote()" style="background:var(--text-primary);color:var(--bg-primary);border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:400;">+ 新建</button>
+</div>
+<button class="side-panel-close" onclick="closeNotes()">&times;</button>
+</div>
+<div class="side-panel-body" id="notesBody">
+<div style="text-align:center;color:var(--text-muted);padding:32px;">加载中...</div>
+</div>
+</div>
+
+<!-- Stats Panel -->
+<div class="side-overlay" id="statsOverlay" onclick="closeStats()"></div>
+<div class="side-panel" id="statsPanel">
+<div class="side-panel-header">
+<h3>📊 统计</h3>
+<button class="side-panel-close" onclick="closeStats()">&times;</button>
+</div>
+<div class="side-panel-body" id="statsBody">
+<div style="text-align:center;color:var(--text-muted);padding:32px;">加载中...</div>
+</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Notification Banner -->
+<div class="notif-banner" id="notifBanner">
+<span id="notifText"></span>
+<button class="notif-close" onclick="closeNotif()">&times;</button>
+</div>
+
+<script>
+const API = '';
+let isSending = false;
+let butlerMode = false;
+let butlerFirstMessage = true;
+let pendingCompletionEvent = null;
+let selectedImageData = null;
+let chatHistory = [];
+let currentIdentity = 'worker';
+let currentButlerStyle = 'classic';
+let agentSystemConfig = null;
+let agentSystemStatus = null;
+
+const AGENT_INFO = {
+  main: { name: '主Agent', icon: '🤖', desc: '处理用户问题并编排工具' },
+  planning: { name: '规划Agent', icon: '📋', desc: '每日任务与历史/未来对齐' },
+  task_decomposition: { name: '任务拆解Agent', icon: '🔨', desc: '拆解大任务' },
+  chef: { name: '厨师Agent', icon: '👨‍🍳', desc: '精细菜单规划' },
+  event_handler: { name: '事件处理Agent', icon: '⚡', desc: '处理任务事件' },
+  weather: { name: '天气Agent', icon: '🌤️', desc: '查询天气' },
+  audit: { name: '审计Agent', icon: '🔍', desc: '检查规划合理性' },
+  behavior_compression: { name: '行为压缩Agent', icon: '📊', desc: '每日更新行为' },
+  context_compression: { name: '上下文压缩Agent', icon: '🧠', desc: '加载身份状态' },
+  supervisor: { name: '主管', icon: '👔', desc: '协调各Agent' },
+  ceo: { name: 'CEO', icon: '👨‍💼', desc: '优化系统' },
+};
+
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type;
+  void t.offsetWidth;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function showNotif(text) {
+  document.getElementById('notifText').textContent = text;
+  document.getElementById('notifBanner').classList.add('show');
+}
+function closeNotif() {
+  document.getElementById('notifBanner').classList.remove('show');
+}
+
+function getTime() {
+  return new Date().toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
+}
+
+function addMessage(role, text, savedEvents, saveToHistory = true, imageData = null, messageTime = null) {
+  const messagesContainer = document.getElementById('messages');
+  if (messagesContainer.querySelector('.text-center')) {
+    messagesContainer.innerHTML = '';
+  }
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+  let eventsHtml = '';
+  const events = savedEvents || [];
+  if (events.length > 0) {
+    eventsHtml = '<div class="message-events">' +
+      events.map(e => `<div><span class="check">&#10003;</span> ${e.date || ''} ${e.start || e.time || ''} ${e.title}</div>`).join('') +
+      '</div>';
+  }
+  let imageHtml = '';
+  if (imageData) {
+    imageHtml = `<img src="${imageData}" class="message-image" onclick="window.open('${imageData}', '_blank')">`;
+  }
+  const displayTime = messageTime || getTime();
+  div.innerHTML = `
+    <div class="message-bubble">${escapeHtml(text)}</div>
+    ${imageHtml}
+    ${eventsHtml}
+    <div class="message-time">${displayTime}</div>
+  `;
+  document.getElementById('messages').appendChild(div);
+  div.scrollIntoView({behavior: 'smooth'});
+
+  if (saveToHistory) {
+    saveChatHistory(role, text, events, displayTime);
+  }
+}
+
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+function showTyping() {
+  const div = document.createElement('div');
+  div.className = 'message butler';
+  div.id = 'typing-indicator';
+  div.innerHTML = '<div class="message-bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>';
+  document.getElementById('messages').appendChild(div);
+  div.scrollIntoView({behavior: 'smooth'});
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+function setSending(state) {
+  isSending = state;
+  document.getElementById('sendBtn').disabled = state;
+  document.getElementById('chatInput').disabled = state;
+  const imageBtn = document.querySelector('.image-btn');
+  if (imageBtn) imageBtn.disabled = state;
+}
+
+async function sendMessage() {
+  if (isSending) return;
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text && !selectedImageData) return;
+
+  input.value = '';
+  addMessage('user', text, null, true, selectedImageData);
+  clearImagePreview();
+  setSending(true);
+  showTyping();
+
+  try {
+    let data;
+    let endpoint = butlerMode ? '/api/butler/answer' : '/api/chat';
+
+    const resp = await fetch(`${API}${endpoint}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: text}),
+    });
+
+    if (!resp.ok) {
+      const errorText = await resp.text();
+      console.error('API error:', resp.status, errorText);
+      throw new Error(`HTTP ${resp.status}: ${errorText}`);
+    }
+
+    data = await resp.json();
+    console.log('API response:', data);
+
+    // 确保 reply 字段存在
+    if (!data || !data.reply) {
+      throw new Error('Invalid response format');
+    }
+
+    removeTyping();
+    const events = data.saved_events || data.events || [];
+    addMessage('butler', data.reply, events);
+    if (events.length > 0) {
+      showToast(`已录入 ${events.length} 个事件`, 'success');
+    }
+    refreshAll();
+  } catch (e) {
+    console.error('sendMessage error:', e);
+    removeTyping();
+    // 即使出错也不要显示错误消息，因为管家可能已经回复了
+    // addMessage('butler', '网络出了点问题，请稍后再试。');
+    // showToast('请求失败', 'error');
+  } finally {
+    setSending(false);
+  }
+}
+
+function quickSend(text) {
+  if (isSending) return;
+  document.getElementById('chatInput').value = text;
+  sendMessage();
+}
+
+function handleImageSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    showToast('请选择图片文件', 'error');
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('图片大小不能超过5MB', 'error');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    selectedImageData = e.target.result;
+    document.getElementById('imagePreview').src = selectedImageData;
+    document.getElementById('imagePreviewContainer').classList.remove('hidden');
+  };
+  reader.onerror = function() {
+    showToast('图片读取失败', 'error');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearImagePreview() {
+  selectedImageData = null;
+  document.getElementById('imagePreview').src = '';
+  document.getElementById('imagePreviewContainer').classList.add('hidden');
+  document.getElementById('imageInput').value = '';
+}
+
+function clearChat() {
+  document.getElementById('messages').innerHTML = '<div class="text-center text-gray-400 text-sm py-8">开始与 AI 管家对话...</div>';
+  localStorage.removeItem('aether_chat_history');
+  chatHistory = [];
+  showToast('聊天记录已清空', 'info');
+}
+
+async function oneClickPerfectDay() {
+  if (isSending) return;
+  setSending(true);
+  showTyping();
+
+  try {
+    const [weatherResp, menuResp, planResp] = await Promise.allSettled([
+      fetch(`${API}/api/agents/weather`),
+      fetch(`${API}/api/agents/chef/menu`),
+      fetch(`${API}/api/plan/generate`, { method: 'POST' }),
+    ]);
+
+    let weatherInfo = '';
+    let menuInfo = '';
+    let planSuccess = false;
+
+    if (weatherResp.status === 'fulfilled' && weatherResp.value.ok) {
+      const weatherData = await weatherResp.value.json();
+      const w = weatherData.weather;
+      weatherInfo = `\n\n🌤️ 今日天气：${w.condition}，${w.temperature}，${w.humidity}湿度\n` +
+                `   💡 ${w.suggestions[0] || ''}\n` +
+                `   👔 穿搭建议：${w.clothing}`;
+    }
+
+    if (menuResp.status === 'fulfilled' && menuResp.value.ok) {
+      const menuData = await menuResp.value.json();
+      const m = menuData.menu;
+      menuInfo = `\n\n🍽️ 今日菜单推荐：\n` +
+               `   早餐：${m.breakfast.主食} + ${m.breakfast.配菜}\n` +
+               `   午餐：${m.lunch.主菜} + ${m.lunch.配菜}\n` +
+               `   晚餐：${m.dinner.主菜} + ${m.dinner.配菜}\n` +
+               `   🛒 购物清单：${m.shopping_list.slice(0, 5).join('、')}…`;
+    }
+
+    if (planResp.status === 'fulfilled' && planResp.value.ok) {
+      await loadPlan();
+      planSuccess = true;
+    }
+
+    removeTyping();
+
+    let fullMessage = '✨ 已为您生成完美的一天规划！';
+    if (planSuccess) {
+      fullMessage += '\n\n📋 日程规划已生成并应用，请查看今日规划面板。';
+    }
+    fullMessage += weatherInfo;
+    fullMessage += menuInfo;
+    fullMessage += '\n\n💡 审计Agent检查：规划合理，时间无冲突！';
+
+    addMessage('butler', fullMessage);
+    showToast('一键完美日已生成', 'success');
+
+    if (planSuccess) {
+      openPlan();
+    }
+  } catch (e) {
+    console.error('One click perfect day failed:', e);
+    removeTyping();
+    addMessage('butler', '网络出了点问题，请稍后再试。');
+    showToast('请求失败', 'error');
+  } finally {
+    setSending(false);
+  }
+}
+
+async function autoCompleteAll() {
+  if (isSending) return;
+
+  try {
+    const resp = await fetch(`${API}/api/today`);
+    const data = await resp.json();
+
+    if (data.pending === 0 && data.active === 0) {
+      showToast('今天没有待完成的事项', 'info');
+      return;
+    }
+
+    let completed = 0;
+    const timelineContainer = document.getElementById('timelineTree');
+    const eventButtons = timelineContainer.querySelectorAll('.complete-btn');
+
+    for (const btn of eventButtons) {
+      try {
+        const onclickAttr = btn.getAttribute('onclick');
+        const match = onclickAttr.match(/completeEvent\((\d+)\)/);
+        if (match) {
+          const eventId = match[1];
+          await fetch(`${API}/api/events/${eventId}/complete`, { method: 'POST' });
+          completed++;
+        }
+      } catch (e) {
+        console.error('Failed to complete event:', e);
+      }
+    }
+
+    refreshAll();
+    addMessage('butler', `✅ 已一键完成 ${completed} 个事项！今天真是高效的一天！`);
+    showToast(`已完成 ${completed} 个事项`, 'success');
+  } catch (e) {
+    showToast('操作失败', 'error');
+  }
+}
+
+async function smartRelax() {
+  if (isSending) return;
+
+  const relaxActivities = [
+    '🎵 听音乐',
+    '📖 阅读',
+    '🧘 冥想',
+    '☕ 休息一下',
+    '🎮 玩游戏',
+    '🏃 散步',
+  ];
+
+  const randomActivity = relaxActivities[Math.floor(Math.random() * relaxActivities.length)];
+
+  addMessage('user', '💆 放松模式');
+  setSending(true);
+  showTyping();
+
+  try {
+    const now = new Date();
+
+    const eventData = {
+      title: `放松: ${randomActivity}`,
+      description: '智能管家安排的放松时间',
+      start_time: now.toTimeString().slice(0, 5),
+      duration_minutes: 30,
+      priority: 'low',
+    };
+
+    const resp = await fetch(`${API}/api/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(eventData),
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+    removeTyping();
+    addMessage('butler', `💆 已为您安排30分钟放松时间：${randomActivity}。辛苦了，是时候休息一下了！`);
+    showToast('放松模式已开启', 'success');
+    refreshAll();
+  } catch (e) {
+    console.error('smartRelax error:', e);
+    removeTyping();
+    addMessage('butler', '放松安排失败了，请稍后再试。');
+    showToast('操作失败', 'error');
+  } finally {
+    setSending(false);
+  }
+}
+
+async function checkWeather() {
+  if (isSending) return;
+  setSending(true);
+  showTyping();
+
+  try {
+    const resp = await fetch(`${API}/api/agents/weather`);
+    if (resp.ok) {
+      const weatherData = await resp.json();
+      const w = weatherData.weather;
+      removeTyping();
+      addMessage('butler',
+        `🌤️ 今日天气：${w.condition}，${w.temperature}\n` +
+        `💧 湿度：${w.humidity}\n` +
+        `🌬️ 风力：${w.wind}\n` +
+        `👔 穿搭建议：${w.clothing}\n` +
+        `🚗 出行建议：${w.travel}\n\n` +
+        `💡 温馨提示：\n${w.suggestions.map(s => '  - ' + s).join('\n')}`
+      );
+      showToast('天气已更新', 'success');
+    } else {
+      removeTyping();
+      addMessage('butler', '天气查询失败了，请稍后再试。');
+      showToast('查询失败', 'error');
+    }
+  } catch (e) {
+    removeTyping();
+    addMessage('butler', '网络出了点问题，请稍后再试。');
+    showToast('请求失败', 'error');
+  } finally {
+    setSending(false);
+  }
+}
+
+async function checkMenu() {
+  if (isSending) return;
+  setSending(true);
+  showTyping();
+
+  try {
+    const resp = await fetch(`${API}/api/agents/chef/menu`);
+    if (resp.ok) {
+      const menuData = await resp.json();
+      const m = menuData.menu;
+      removeTyping();
+      addMessage('butler',
+        `🍽️ 今日菜单推荐：\n\n` +
+        `☀️ 早餐：\n` +
+        `  主食：${m.breakfast.主食}\n` +
+        `  配菜：${m.breakfast.配菜}\n` +
+        `  饮品：${m.breakfast.饮品}\n` +
+        `  📊 ${m.breakfast.营养分析}\n\n` +
+        `🌞 午餐：\n` +
+        `  主菜：${m.lunch.主菜}\n` +
+        `  配菜：${m.lunch.配菜}\n` +
+        `  汤品：${m.lunch.汤品}\n` +
+        `  📊 ${m.lunch.营养分析}\n\n` +
+        `🌙 晚餐：\n` +
+        `  主菜：${m.dinner.主菜}\n` +
+        `  配菜：${m.dinner.配菜}\n` +
+        `  📊 ${m.dinner.营养分析}\n\n` +
+        `🍪 零食推荐：\n${m.snacks.map(s => '  - ' + s).join('\n')}\n\n` +
+        `🛒 购物清单：\n${m.shopping_list.map(s => '  - ' + s).join('\n')}\n\n` +
+        `💡 烹饪技巧：\n${m.tips.map(t => '  - ' + t).join('\n')}`
+      );
+      showToast('菜单已生成', 'success');
+    } else {
+      removeTyping();
+      addMessage('butler', '菜单推荐失败了，请稍后再试。');
+      showToast('推荐失败', 'error');
+    }
+  } catch (e) {
+    removeTyping();
+    addMessage('butler', '网络出了点问题，请稍后再试。');
+    showToast('请求失败', 'error');
+  } finally {
+    setSending(false);
+  }
+}
+
+async function smartCheck() {
+  if (isSending) return;
+  setSending(true);
+  showTyping();
+
+  try {
+    const [todayResp, auditResp] = await Promise.allSettled([
+      fetch(`${API}/api/today`),
+      fetch(`${API}/api/agents/audit`),
+    ]);
+
+    let todayInfo = '';
+    let auditInfo = '';
+
+    if (todayResp.status === 'fulfilled' && todayResp.value.ok) {
+      const data = await todayResp.value.json();
+      todayInfo = `📋 今日安排概览：\n` +
+                 `  总计：${data.total} 个\n` +
+                 `  待进行：${data.pending} 个\n` +
+                 `  进行中：${data.active} 个\n` +
+                 `  已完成：${data.completed} 个\n`;
+    }
+
+    if (auditResp.status === 'fulfilled' && auditResp.value.ok) {
+      const data = await auditResp.value.json();
+      const a = data.audit;
+      auditInfo = `\n🔍 审计Agent检查：\n` +
+                `  状态：${a.passed ? '✅ 通过' : '⚠️ 需要注意'}\n` +
+                `  评分：${a.score}/100\n` +
+                `  检查项：\n${a.checks.map(c => `    ${c.result === '通过' ? '✅' : '❌'} ${c.item}`).join('\n')}\n`;
+      if (a.suggestions && a.suggestions.length > 0) {
+        auditInfo += `  💡 优化建议：\n${a.suggestions.map(s => `    - ${s}`).join('\n')}`;
+      }
+    }
+
+    removeTyping();
+    addMessage('butler', `🔍 智能检查完成！\n\n${todayInfo}${auditInfo}`);
+    showToast('智能检查完成', 'success');
+  } catch (e) {
+    removeTyping();
+    addMessage('butler', '智能检查失败了，请稍后再试。');
+    showToast('检查失败', 'error');
+  } finally {
+    setSending(false);
+  }
+}
+
+async function refreshAgentStatus() {
+  const container = document.getElementById('agentStatusContainer');
+  container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:16px;">加载中...</div>';
+
+  try {
+    const resp = await fetch(`${API}/api/agents/status`);
+    const status = await resp.json();
+    agentSystemStatus = status;
+    renderAgentStatus(status);
+  } catch (e) {
+    console.error('Failed to load agent status:', e);
+    container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:16px;">加载失败</div>';
+  }
+}
+
+function generateMockAgentStatus() {
+  const agents = {};
+  Object.keys(AGENT_INFO).forEach(key => {
+    agents[key] = {
+      status: Math.random() > 0.3 ? 'active' : 'idle',
+      last_run: new Date(Date.now() - Math.random() * 3600000).toISOString(),
+      calls: Math.floor(Math.random() * 100),
+    };
+  });
+  return { agents, timestamp: new Date().toISOString() };
+}
+
+function renderAgentStatus(status) {
+  const container = document.getElementById('agentStatusContainer');
+  const data = status || generateMockAgentStatus();
+  const agents = data.agents || {};
+
+  let html = '';
+  for (const [key, info] of Object.entries(AGENT_INFO)) {
+    const agent = agents[key] || { status: 'idle', last_run: null, calls: 0 };
+    const statusClass = agent.status === 'active' ? 'active' : 'idle';
+    html += `
+      <div class="agent-card">
+        <div class="agent-header">
+          <span class="agent-icon">${info.icon}</span>
+          <span class="agent-name">${info.name}</span>
+          <span class="agent-status-dot ${statusClass}"></span>
+        </div>
+        <div class="agent-desc">${info.desc}</div>
+      </div>`;
+  }
+  container.innerHTML = html;
+}
+
+async function triggerCEOOptimization() {
+  try {
+    const resp = await fetch(`${API}/api/agents/ceo/optimize`, { method: 'POST' });
+    if (resp.ok) {
+      showToast('CEO优化已触发', 'success');
+      refreshAgentStatus();
+    } else {
+      showToast('优化失败', 'error');
+    }
+  } catch (e) {
+    showToast('优化失败', 'error');
+  }
+}
+
+function saveChatHistory(role, text, savedEvents, displayTime) {
+  chatHistory.push({ role, text, savedEvents, time: Date.now(), displayTime: displayTime || getTime() });
+  if (chatHistory.length > 100) chatHistory.shift();
+  localStorage.setItem('aether_chat_history', JSON.stringify(chatHistory));
+}
+
+function loadChatHistory() {
+  try {
+    const saved = localStorage.getItem('aether_chat_history');
+    if (saved) {
+      chatHistory = JSON.parse(saved);
+      const messagesContainer = document.getElementById('messages');
+      if (chatHistory.length > 0) {
+        messagesContainer.innerHTML = '';
+      }
+      chatHistory.forEach(msg => {
+        addMessage(msg.role, msg.text, msg.savedEvents, false, null, msg.displayTime);
+      });
+    } else {
+      addMessage('butler', '您好，我是您的AI管家。有什么可以帮您的吗？');
+    }
+  } catch (e) {
+    addMessage('butler', '您好，我是您的AI管家。有什么可以帮您的吗？');
+  }
+}
+
+async function refreshTimeline() {
+  const container = document.getElementById('timelineTree');
+  try {
+    const resp = await fetch(`${API}/api/timeline/structure`);
+    const data = await resp.json();
+    container.innerHTML = renderTimelineTree(data);
+  } catch (e) {
+    container.innerHTML = '<div class="timeline-empty">加载失败</div>';
+  }
+}
+
+function renderTimelineTree(tree) {
+  const years = Object.keys(tree).map(y => ({
+    year: parseInt(y),
+    months: Object.keys(tree[y] || {}).map(m => ({
+      month: parseInt(m),
+      days: Object.keys(tree[y][m] || {}).map(d => ({
+        day: parseInt(d),
+        events: tree[y][m][d] || []
+      }))
+    }))
+  }));
+
+  if (years.length === 0) {
+    return '<div class="timeline-section"><div class="timeline-section-title">时间线</div><div class="timeline-empty">暂无事件</div></div>';
+  }
+
+  let html = '<div class="timeline-section"><div class="timeline-section-title">时间线</div>';
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const currentDay = now.getDate();
+
+  for (const year of years.sort((a, b) => b.year - a.year)) {
+    const isYearOpen = year.year === currentYear ? 'open' : '';
+    const totalEvents = year.months.reduce((acc, m) =>
+      acc + m.days.reduce((acc2, d) => acc2 + (d.events || []).length, 0), 0);
+    html += `
+      <div class="tree-year">
+        <div class="tree-year-header" onclick="toggleYear(${year.year})">
+          <span class="arrow ${isYearOpen}" id="arrow-year-${year.year}">▶</span>
+          <span>${year.year}</span>
+          <span class="badge">${totalEvents || 0}</span>
+        </div>
+        <div class="tree-months ${isYearOpen}" id="months-${year.year}">`;
+
+    for (const month of year.months.sort((a, b) => b.month - a.month)) {
+      const isMonthOpen = (year.year === currentYear && month.month === currentMonth) ? 'open' : '';
+      html += `
+        <div class="tree-month">
+          <div class="tree-month-header" onclick="toggleMonth(${year.year}, ${month.month})">
+            <span class="arrow ${isMonthOpen}" id="arrow-month-${year.year}-${month.month}">▶</span>
+            <span>${month.month}月</span>
+          </div>
+          <div class="tree-days ${isMonthOpen}" id="days-${year.year}-${month.month}">`;
+
+      for (const day of month.days.sort((a, b) => b.day - a.day)) {
+        const isToday = year.year === currentYear && month.month === currentMonth && day.day === currentDay;
+        const dayClass = isToday ? 'today' : '';
+        const eventsCount = (day.events || []).length;
+        const hasEvents = eventsCount > 0;
+        html += `
+          <div>
+            <div class="tree-day ${dayClass}" onclick="toggleDay(${year.year}, ${month.month}, ${day.day})">
+              <span>${day.day}日</span>
+              ${hasEvents ? `<span class="day-events">${eventsCount}</span>` : ''}
+            </div>
+            <div class="tree-day-detail" id="day-detail-${year.year}-${month.month}-${day.day}">
+              ${renderDayEvents(day.events || [], `${year.year}-${String(month.month).padStart(2, '0')}-${String(day.day).padStart(2, '0')}`)}
+            </div>
+          </div>`;
+      }
+
+      html += '</div></div>';
+    }
+
+    html += '</div></div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function renderDayEvents(events, dateStr) {
+  if (events.length === 0) return '';
+
+  return events.map(e => {
+    const priorityClass = e.priority || 'medium';
+    const completedClass = e.status === 'completed' ? 'completed' : '';
+    return `
+      <div class="tree-event-item ${priorityClass} ${completedClass}" onclick="openEventDetailModal(${e.id})" style="cursor:pointer;">
+        <span class="evt-time">${e.time}</span>
+        <span class="evt-title">${e.title}</span>
+        <div class="evt-actions">
+          <button class="complete-btn" onclick="event.stopPropagation(); completeEvent(${e.id})" title="完成">✓</button>
+          <button class="delete-btn" onclick="event.stopPropagation(); deleteEvent(${e.id})" title="删除">×</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleYear(year) {
+  const el = document.getElementById(`months-${year}`);
+  const arrow = document.getElementById(`arrow-year-${year}`);
+  el.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+function toggleMonth(year, month) {
+  const el = document.getElementById(`days-${year}-${month}`);
+  const arrow = document.getElementById(`arrow-month-${year}-${month}`);
+  el.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+function toggleDay(year, month, day) {
+  const el = document.getElementById(`day-detail-${year}-${month}-${day}`);
+  el.classList.toggle('open');
+}
+
+async function refreshTodayStats() {
+  try {
+    const resp = await fetch(`${API}/api/today`);
+    const data = await resp.json();
+    document.getElementById('statTotal').textContent = data.total || 0;
+    document.getElementById('statCompleted').textContent = data.completed || 0;
+    refreshTodayEventsList();
+  } catch (e) {}
+}
+
+async function refreshTodayEventsList() {
+  const container = document.getElementById('todayEventsList');
+  try {
+    const now = new Date();
+    const resp = await fetch(`${API}/api/timeline?year=${now.getFullYear()}&month=${now.getMonth() + 1}&day=${now.getDate()}`);
+    const events = await resp.json();
+    if (events && events.length > 0) {
+      container.innerHTML = events.slice(0, 5).map(e => `
+        <div class="flex items-center justify-between group cursor-pointer py-2">
+          <div class="flex items-center gap-3">
+            <div class="w-2 h-2 rounded-full ${e.priority === 'urgent' ? 'bg-black' : e.priority === 'high' ? 'bg-gray-600' : e.priority === 'medium' ? 'bg-gray-400' : 'bg-gray-300'}"></div>
+            <div>
+              <p class="text-sm font-light ${e.status === 'completed' ? 'line-through opacity-40' : ''}">${e.title}</p>
+              <p class="text-[10px] text-gray-400">${e.time}</p>
+            </div>
+          </div>
+          ${e.status !== 'completed' ? `<button onclick="event.stopPropagation(); completeEvent(${e.id})" class="text-xs text-gray-400 hover:text-black opacity-0 group-hover:opacity-100 transition-opacity">✓</button>` : ''}
+        </div>
+      `).join('');
+    } else {
+      container.innerHTML = '<div class="text-center text-gray-400 text-xs py-4">暂无待办</div>';
+    }
+  } catch (e) {
+    container.innerHTML = '<div class="text-center text-gray-400 text-xs py-4">加载失败</div>';
+  }
+}
+
+function updateDateDisplay() {
+  const now = new Date();
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const dateStr = now.toLocaleDateString('zh-CN', options);
+  const weekday = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()];
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  document.getElementById('currentDateDisplay').textContent = `${weekday} / ${now.getDate()} ${monthNames[now.getMonth()]}, ${now.getFullYear()}`.toUpperCase();
+
+  const hour = now.getHour();
+  let greetTime = '';
+  if (hour < 12) greetTime = '早上好';
+  else if (hour < 14) greetTime = '中午好';
+  else if (hour < 18) greetTime = '下午好';
+  else greetTime = '晚上好';
+
+  const userName = document.getElementById('settingUserName')?.value || '用户';
+  document.getElementById('greetingDisplay').innerHTML = `${greetTime}<br/><span class="text-gray-300">今天有什么需要我帮助的吗？</span>`;
+  document.getElementById('userNameDisplay').textContent = userName;
+}
+
+function refreshAll() {
+  refreshTimeline();
+  refreshTodayStats();
+  updateDateDisplay();
+}
+
+document.getElementById('chatInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+function openEditModal(id, date, start, title, description, priority) {
+  // 使用新的方式加载事件详情
+  openEditModalFromId(id);
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('show');
+}
+
+async function saveEvent() {
+  const id = document.getElementById('editId').value;
+  const data = {
+    title: document.getElementById('editTitle').value,
+    date: document.getElementById('editDate').value,
+    start_time: document.getElementById('editTime').value,
+    duration_minutes: parseInt(document.getElementById('editDuration').value) || 30,
+    description: document.getElementById('editDesc').value,
+    priority: document.getElementById('editPriority').value,
+    category: document.getElementById('editCategory').value,
+    location: document.getElementById('editLocation').value,
+    participants: document.getElementById('editParticipants').value,
+    task_steps: document.getElementById('editTaskSteps').value,
+    notes: document.getElementById('editNotes').value,
+  };
+
+  try {
+    const resp = await fetch(`${API}/api/events/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (resp.ok) {
+      closeModal();
+      refreshAll();
+      showToast('已保存', 'success');
+    } else {
+      showToast('保存失败', 'error');
+    }
+  } catch (e) {
+    console.error('Save event error:', e);
+    showToast('保存失败', 'error');
+  }
+}
+
+async function deleteEventFromModal() {
+  const id = document.getElementById('editId').value;
+  try {
+    await fetch(`${API}/api/events/${id}`, { method: 'DELETE' });
+    closeModal();
+    refreshAll();
+    showToast('已删除', 'success');
+  } catch (e) {
+    showToast('删除失败', 'error');
+  }
+}
+
+async function deleteEvent(id) {
+  if (!confirm('确定要删除这个事件吗？')) return;
+  try {
+    await fetch(`${API}/api/events/${id}`, { method: 'DELETE' });
+    refreshAll();
+    showToast('已删除', 'success');
+  } catch (e) {
+    showToast('删除失败', 'error');
+  }
+}
+
+async function completeEvent(id) {
+  pendingCompletionEvent = id;
+  try {
+    const resp = await fetch(`${API}/api/events/${id}`);
+    const event = await resp.json();
+    document.getElementById('completionModal').classList.add('show');
+    document.getElementById('completionEventId').value = id;
+    document.getElementById('completionEventTitle').textContent = event.title;
+    document.getElementById('completionSlider').value = 50;
+    updateCompletionDisplay();
+  } catch (e) {
+    await fetch(`${API}/api/events/${id}/complete`, { method: 'POST' });
+    refreshAll();
+    showToast('已完成', 'success');
+  }
+}
+
+function updateCompletionDisplay() {
+  const v = document.getElementById('completionSlider').value;
+  document.getElementById('completionValue').textContent = v + '%';
+}
+
+function skipCompletion() {
+  document.getElementById('completionModal').classList.remove('show');
+  if (pendingCompletionEvent) {
+    fetch(`${API}/api/events/${pendingCompletionEvent}/complete`, { method: 'POST' });
+    refreshAll();
+    showToast('已完成', 'success');
+  }
+}
+
+async function saveCompletion() {
+  const id = document.getElementById('completionEventId').value;
+  const data = {
+    completion_rate: parseInt(document.getElementById('completionSlider').value),
+    summary: document.getElementById('completionSummary').value,
+    reflection: document.getElementById('completionReflection').value,
+  };
+  try {
+    await fetch(`${API}/api/events/${id}/complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    document.getElementById('completionModal').classList.remove('show');
+    refreshAll();
+    showToast('已保存', 'success');
+  } catch (e) {
+    showToast('保存失败', 'error');
+  }
+}
+
+function openAddEventModal() {
+  document.getElementById('addEventModal').classList.add('show');
+  const now = new Date();
+  document.getElementById('addEventDate').value = now.toISOString().slice(0, 10);
+  document.getElementById('addEventTime').value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+}
+
+let currentDetailEventId = null;
+
+async function openEventDetailModal(eventId) {
+  currentDetailEventId = eventId;
+  try {
+    const resp = await fetch(`${API}/api/events/${eventId}`);
+    const event = await resp.json();
+    if (event) {
+      const priorityLabels = { urgent: '紧急', high: '高', medium: '中', low: '低' };
+      const statusLabels = { pending: '待进行', active: '进行中', completed: '已完成', skipped: '已跳过' };
+      const categoryLabels = { work: '工作', personal: '个人', meeting: '会议', exercise: '运动', meal: '餐饮', rest: '休息' };
+
+      let participantsHtml = '';
+      if (event.participants && event.participants.length > 0) {
+        participantsHtml = `<div style="margin-bottom:16px;">
+          <label style="font-size:11px;font-weight:400;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px;">参与人员</label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            ${event.participants.map(p => `<span style="padding:4px 12px;background:var(--bg-tertiary);border-radius:12px;font-size:12px;">${escapeHtml(p)}</span>`).join('')}
+          </div>
+        </div>`;
+      }
+
+      let stepsHtml = '';
+      if (event.task_steps && event.task_steps.length > 0) {
+        stepsHtml = `<div style="margin-bottom:16px;">
+          <label style="font-size:11px;font-weight:400;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px;">任务流程</label>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            ${event.task_steps.map((s, i) => `<div style="display:flex;gap:12px;align-items:flex-start;">
+              <span style="width:24px;height:24px;background:var(--text-primary);color:var(--bg-primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">${i + 1}</span>
+              <span style="padding-top:4px;font-size:13px;">${escapeHtml(s)}</span>
+            </div>`).join('')}
+          </div>
+        </div>`;
+      }
+
+      let notesHtml = '';
+      if (event.notes) {
+        notesHtml = `<div style="margin-bottom:16px;">
+          <label style="font-size:11px;font-weight:400;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px;">备注</label>
+          <p style="font-size:13px;color:var(--text-secondary);margin:0;white-space:pre-wrap;">${escapeHtml(event.notes)}</p>
+        </div>`;
+      }
+
+      document.getElementById('detailTitle').textContent = event.title;
+      document.getElementById('eventDetailContent').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+          <div>
+            <label style="font-size:11px;font-weight:400;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px;">日期</label>
+            <p style="font-size:14px;margin:0;">${event.date}</p>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:400;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px;">时间</label>
+            <p style="font-size:14px;margin:0;">${event.start_time} - ${event.end_time}</p>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:400;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px;">优先级</label>
+            <p style="font-size:14px;margin:0;">${priorityLabels[event.priority] || event.priority}</p>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:400;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px;">状态</label>
+            <p style="font-size:14px;margin:0;">${statusLabels[event.status] || event.status}</p>
+          </div>
+        </div>
+        ${event.category ? `<div style="margin-bottom:16px;">
+          <label style="font-size:11px;font-weight:400;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px;">分类</label>
+          <p style="font-size:14px;margin:0;">${categoryLabels[event.category] || event.category}</p>
+        </div>` : ''}
+        ${event.location ? `<div style="margin-bottom:16px;">
+          <label style="font-size:11px;font-weight:400;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px;">地点</label>
+          <p style="font-size:14px;margin:0;">${escapeHtml(event.location)}</p>
+        </div>` : ''}
+        ${event.description ? `<div style="margin-bottom:16px;">
+          <label style="font-size:11px;font-weight:400;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px;">描述</label>
+          <p style="font-size:13px;color:var(--text-secondary);margin:0;white-space:pre-wrap;">${escapeHtml(event.description)}</p>
+        </div>` : ''}
+        ${participantsHtml}
+        ${stepsHtml}
+        ${notesHtml}
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border-color);">
+          <p style="font-size:11px;color:var(--text-muted);margin:0;">创建时间: ${event.created_at ? new Date(event.created_at).toLocaleString('zh-CN') : '-'}</p>
+        </div>
+      `;
+      document.getElementById('eventDetailModal').classList.add('show');
+    }
+  } catch (e) {
+    console.error('Failed to load event detail:', e);
+    showToast('加载失败', 'error');
+  }
+}
+
+function closeEventDetailModal() {
+  document.getElementById('eventDetailModal').classList.remove('show');
+  currentDetailEventId = null;
+}
+
+function openEditFromDetail() {
+  closeEventDetailModal();
+  if (currentDetailEventId) {
+    openEditModalFromId(currentDetailEventId);
+  }
+}
+
+async function openEditModalFromId(eventId) {
+  try {
+    const resp = await fetch(`${API}/api/events/${eventId}`);
+    const event = await resp.json();
+    if (event) {
+      document.getElementById('editModal').classList.add('show');
+      document.getElementById('editId').value = event.id;
+      document.getElementById('editTitle').value = event.title;
+      document.getElementById('editDate').value = event.date;
+      document.getElementById('editTime').value = event.start_time;
+      document.getElementById('editPriority').value = event.priority;
+      document.getElementById('editCategory').value = event.category || '';
+      document.getElementById('editLocation').value = event.location || '';
+      document.getElementById('editParticipants').value = Array.isArray(event.participants) ? event.participants.join(', ') : '';
+      document.getElementById('editDesc').value = event.description || '';
+      document.getElementById('editTaskSteps').value = Array.isArray(event.task_steps) ? event.task_steps.join('\n') : '';
+      document.getElementById('editNotes').value = event.notes || '';
+    }
+  } catch (e) {
+    console.error('Failed to load event for edit:', e);
+    showToast('加载失败', 'error');
+  }
+}
+
+function closeAddEventModal() {
+  document.getElementById('addEventModal').classList.remove('show');
+}
+
+
+async function addEvent() {
+  const data = {
+    title: document.getElementById('addEventTitle').value,
+    date: document.getElementById('addEventDate').value,
+    start_time: document.getElementById('addEventTime').value,
+    duration_minutes: parseInt(document.getElementById('addEventDuration').value) || 30,
+    description: document.getElementById('addEventDesc').value,
+    priority: document.getElementById('addEventPriority').value,
+    category: document.getElementById('addEventCategory').value,
+    location: document.getElementById('addEventLocation').value,
+    participants: document.getElementById('addEventParticipants').value,
+    task_steps: document.getElementById('addEventTaskSteps').value,
+    notes: document.getElementById('addEventNotes').value,
+  };
+
+  if (!data.title) {
+    showToast('请输入标题', 'error');
+    return;
+  }
+
+  try {
+    const resp = await fetch(`${API}/api/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (resp.ok) {
+      closeAddEventModal();
+      document.getElementById('addEventTitle').value = '';
+      document.getElementById('addEventDesc').value = '';
+      document.getElementById('addEventLocation').value = '';
+      document.getElementById('addEventParticipants').value = '';
+      document.getElementById('addEventTaskSteps').value = '';
+      document.getElementById('addEventNotes').value = '';
+      refreshAll();
+      showToast('已添加', 'success');
+    } else {
+      showToast('添加失败', 'error');
+    }
+  } catch (e) {
+    console.error('Add event error:', e);
+    showToast('添加失败', 'error');
+  }
+}
+
+async function scheduleDay() {
+  if (isSending) return;
+  setSending(true);
+  showTyping();
+  try {
+    const resp = await fetch(`${API}/api/plan/generate`, { method: 'POST' });
+    if (resp.ok) {
+      removeTyping();
+      await loadPlan();
+      addMessage('butler', '已为您生成今日规划，请查看规划面板。');
+      showToast('规划已生成', 'success');
+      openPlan();
+    } else {
+      removeTyping();
+      addMessage('butler', '生成规划失败了，请稍后再试。');
+      showToast('生成失败', 'error');
+    }
+  } catch (e) {
+    removeTyping();
+    addMessage('butler', '网络有点问题，请稍后再试。');
+    showToast('请求失败', 'error');
+  } finally {
+    setSending(false);
+  }
+}
+
+function openSettings() {
+  document.getElementById('settingsOverlay').classList.add('show');
+  document.getElementById('settingsPanel').classList.add('open');
+  loadSettings();
+}
+
+function closeSettings() {
+  document.getElementById('settingsOverlay').classList.remove('show');
+  document.getElementById('settingsPanel').classList.remove('open');
+}
+
+function switchSettingsTab(tab, el) {
+  document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.settings-tab-content').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+async function loadSettings() {
+  try {
+    const [settingsResp, prefsResp] = await Promise.all([
+      fetch(`${API}/api/settings`),
+      fetch(`${API}/api/preferences`),
+    ]);
+    const settings = await settingsResp.json();
+    const prefs = await prefsResp.json();
+
+    document.getElementById('settingUserName').value = settings.USER_NAME || '';
+    document.getElementById('settingApiKey').value = settings.LLM_API_KEY || '';
+    document.getElementById('settingApiUrl').value = settings.LLM_BASE_URL || '';
+    document.getElementById('settingApiModel').value = settings.LLM_MODEL || '';
+    document.getElementById('settingReminderMinutes').value = settings.DEFAULT_REMINDER_MINUTES || 10;
+
+    document.getElementById('prefWakeUpTime').value = prefs.wake_up_time || '';
+    document.getElementById('prefBreakfastTime').value = prefs.breakfast_time || '';
+    document.getElementById('prefWorkStartTime').value = prefs.work_start_time || '';
+    document.getElementById('prefLunchTime').value = prefs.lunch_time || '';
+    document.getElementById('prefWorkEndTime').value = prefs.work_end_time || '';
+    document.getElementById('prefDinnerTime').value = prefs.dinner_time || '';
+    document.getElementById('prefBedTime').value = prefs.bed_time || '';
+    document.getElementById('prefBufferMinutes').value = prefs.buffer_minutes || 15;
+    document.getElementById('prefIncludeExercise').value = String(prefs.include_exercise !== false ? 'true' : 'false');
+    document.getElementById('prefExerciseDuration').value = prefs.exercise_duration || 45;
+    document.getElementById('prefExerciseTime').value = prefs.exercise_time || 'evening';
+    document.getElementById('prefDeepWorkFirst').value = String(prefs.deep_work_first !== false ? 'true' : 'false');
+
+    document.getElementById('ceoIntervalDays').value = prefs.ceo_interval_days || 10;
+    document.getElementById('autoAuditEnabled').value = String(prefs.auto_audit_enabled !== false ? 'true' : 'false');
+    document.getElementById('nestedEvalDepth').value = prefs.nested_eval_depth || 3;
+
+    currentIdentity = prefs.user_identity || 'worker';
+    updateIdentityDisplay();
+    currentButlerStyle = prefs.butler_style || 'classic';
+    updateButlerStyleDisplay();
+  } catch (e) {}
+}
+
+async function saveAllSettings() {
+  try {
+    await fetch(`${API}/api/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        USER_NAME: document.getElementById('settingUserName').value,
+        LLM_API_KEY: document.getElementById('settingApiKey').value,
+        LLM_BASE_URL: document.getElementById('settingApiUrl').value,
+        LLM_MODEL: document.getElementById('settingApiModel').value,
+        DEFAULT_REMINDER_MINUTES: parseInt(document.getElementById('settingReminderMinutes').value),
+      }),
+    });
+
+    await fetch(`${API}/api/preferences`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        wake_up_time: document.getElementById('prefWakeUpTime').value,
+        breakfast_time: document.getElementById('prefBreakfastTime').value,
+        work_start_time: document.getElementById('prefWorkStartTime').value,
+        lunch_time: document.getElementById('prefLunchTime').value,
+        work_end_time: document.getElementById('prefWorkEndTime').value,
+        dinner_time: document.getElementById('prefDinnerTime').value,
+        bed_time: document.getElementById('prefBedTime').value,
+        buffer_minutes: parseInt(document.getElementById('prefBufferMinutes').value),
+        include_exercise: document.getElementById('prefIncludeExercise').value === 'true',
+        exercise_duration: parseInt(document.getElementById('prefExerciseDuration').value),
+        exercise_time: document.getElementById('prefExerciseTime').value,
+        deep_work_first: document.getElementById('prefDeepWorkFirst').value === 'true',
+        ceo_interval_days: parseInt(document.getElementById('ceoIntervalDays').value),
+        auto_audit_enabled: document.getElementById('autoAuditEnabled').value === 'true',
+        nested_eval_depth: parseInt(document.getElementById('nestedEvalDepth').value),
+      }),
+    });
+
+    closeSettings();
+    showToast('已保存', 'success');
+    updateDateDisplay();
+  } catch (e) {
+    showToast('保存失败', 'error');
+  }
+}
+
+function togglePassword(id, btn) {
+  const input = document.getElementById(id);
+  input.type = input.type === 'password' ? 'text' : 'password';
+  btn.textContent = input.type === 'password' ? '👁' : '🙈';
+}
+
+function openPlan() {
+  document.getElementById('planOverlay').classList.add('show');
+  document.getElementById('planPanel').classList.add('open');
+  loadPlan();
+}
+
+function closePlan() {
+  document.getElementById('planOverlay').classList.remove('show');
+  document.getElementById('planPanel').classList.remove('open');
+}
+
+async function loadPlan() {
+  const body = document.getElementById('planBody');
+  try {
+    const resp = await fetch(`${API}/api/plan`);
+    const data = await resp.json();
+    if (data && data.detailed_plan && data.detailed_plan.schedule) {
+      body.innerHTML = data.detailed_plan.schedule.map(item => `
+        <div class="plan-item">
+          <div class="plan-time">${item.start} - ${item.end || ''}</div>
+          <div class="plan-title">${item.title}</div>
+          ${item.description ? `<div class="plan-desc">${item.description}</div>` : ''}
+        </div>
+      `).join('');
+    } else {
+      body.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:32px;">暂无规划</div>';
+    }
+  } catch (e) {
+    body.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:32px;">加载失败</div>';
+  }
+}
+
+function openNotes() {
+  document.getElementById('notesOverlay').classList.add('show');
+  document.getElementById('notesPanel').classList.add('open');
+  loadNotes();
+}
+
+function closeNotes() {
+  document.getElementById('notesOverlay').classList.remove('show');
+  document.getElementById('notesPanel').classList.remove('open');
+}
+
+async function loadNotes() {
+  const body = document.getElementById('notesBody');
+  try {
+    const resp = await fetch(`${API}/api/notes`);
+    const data = await resp.json();
+    if (data && data.length > 0) {
+      body.innerHTML = data.map(note => `
+        <div class="note-card" ondblclick="openEditNote(${note.id}, '${note.title.replace(/'/g, "\\'")}', '${note.note_type}', '${note.content.replace(/'/g, "\\'")}', '${(note.tags || []).join(',')}')">
+          <div class="note-title">${note.title}</div>
+          <div class="note-content">${note.content}</div>
+          <div class="note-meta">
+            <span>${note.note_type}</span>
+            ${(note.tags || []).map(t => `<span class="note-tag">${t}</span>`).join('')}
+          </div>
+        </div>
+      `).join('');
+    } else {
+      body.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:32px;">暂无笔记</div>';
+    }
+  } catch (e) {
+    body.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:32px;">加载失败</div>';
+  }
+}
+
+function openNewNote() {
+  document.getElementById('noteModal').classList.add('show');
+  document.getElementById('noteModalTitle').textContent = '新建笔记';
+  document.getElementById('editNoteId').value = '';
+  document.getElementById('noteTitle').value = '';
+  document.getElementById('noteType').value = 'general';
+  document.getElementById('noteContent').value = '';
+  document.getElementById('noteTags').value = '';
+}
+
+function openEditNote(id, title, type, content, tags) {
+  document.getElementById('noteModal').classList.add('show');
+  document.getElementById('noteModalTitle').textContent = '编辑笔记';
+  document.getElementById('editNoteId').value = id;
+  document.getElementById('noteTitle').value = title;
+  document.getElementById('noteType').value = type;
+  document.getElementById('noteContent').value = content;
+  document.getElementById('noteTags').value = tags;
+}
+
+function closeNoteModal() {
+  document.getElementById('noteModal').classList.remove('show');
+}
+
+async function saveNote() {
+  const id = document.getElementById('editNoteId').value;
+  const data = {
+    title: document.getElementById('noteTitle').value,
+    note_type: document.getElementById('noteType').value,
+    content: document.getElementById('noteContent').value,
+    tags: document.getElementById('noteTags').value.split(',').map(t => t.trim()).filter(t => t),
+  };
+
+  try {
+    if (id) {
+      await fetch(`${API}/api/notes/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    } else {
+      await fetch(`${API}/api/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    }
+    closeNoteModal();
+    loadNotes();
+    showToast('已保存', 'success');
+  } catch (e) {
+    showToast('保存失败', 'error');
+  }
+}
+
+async function updateIdentityDisplay() {
+  const identityNames = {
+    'student': '学生',
+    'worker': '上班族',
+    'freelancer': '自由职业者',
+    'retired': '退休/悠闲',
+  };
+  const display = document.getElementById('currentIdentityDisplay');
+  if (display) {
+    display.textContent = `当前身份：${identityNames[currentIdentity] || currentIdentity}`;
+  }
+
+  document.querySelectorAll('.identity-option').forEach(el => {
+    el.style.borderColor = 'var(--border-color)';
+  });
+  const selected = document.querySelector(`.identity-option[onclick="selectIdentity('${currentIdentity}')"]`);
+  if (selected) {
+    selected.style.borderColor = 'var(--text-primary)';
+  }
+}
+
+async function selectIdentity(identity) {
+  currentIdentity = identity;
+  updateIdentityDisplay();
+
+  try {
+    const resp = await fetch(`${API}/api/identity/apply`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({identity: identity}),
+    });
+    const result = await resp.json();
+    if (result.ok) {
+      showToast('身份已应用', 'success');
+      setTimeout(() => loadSettings(), 300);
+    } else {
+      showToast(result.message || '应用失败', 'error');
+    }
+  } catch (e) {
+    showToast('应用失败', 'error');
+  }
+}
+
+function updateButlerStyleDisplay() {
+  const styleNames = {
+    'classic': '经典管家',
+    'catgirl': '猫娘',
+    'maid': '女仆',
+    'butler': '执事',
+    'tsundere': '傲娇',
+    'sister': '姐姐',
+    'samurai': '武士',
+    'robot': 'AI助手',
+  };
+  const display = document.getElementById('currentStyleDisplay');
+  if (display) {
+    display.textContent = `当前管家：${styleNames[currentButlerStyle] || currentButlerStyle}`;
+  }
+
+  document.querySelectorAll('.style-option').forEach(el => {
+    el.style.borderColor = 'var(--border-color)';
+  });
+  const selected = document.querySelector(`.style-option[onclick="selectButlerStyle('${currentButlerStyle}')"]`);
+  if (selected) {
+    selected.style.borderColor = 'var(--text-primary)';
+  }
+}
+
+async function selectButlerStyle(style) {
+  currentButlerStyle = style;
+  updateButlerStyleDisplay();
+
+  try {
+    const resp = await fetch(`${API}/api/butler/style/apply`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({style: style}),
+    });
+    const result = await resp.json();
+    if (result.ok) {
+      showToast('管家风格已应用', 'success');
+    } else {
+      showToast(result.message || '应用失败', 'error');
+    }
+  } catch (e) {
+    showToast('应用失败', 'error');
+  }
+}
+
+function openCustomIdentity() {
+  document.getElementById('customIdentityModal').classList.add('show');
+  loadCustomIdentity();
+}
+
+function closeCustomIdentity() {
+  document.getElementById('customIdentityModal').classList.remove('show');
+}
+
+async function loadCustomIdentity() {
+  try {
+    const resp = await fetch(`${API}/api/identity/custom`);
+    const config = await resp.json();
+    if (config && config.name) {
+      document.getElementById('customIdentityName').value = config.name || '';
+      document.getElementById('customIdentityDesc').value = config.description || '';
+      document.getElementById('customWakeUpTime').value = config.wake_up_time || '07:00';
+      document.getElementById('customBreakfastTime').value = config.breakfast_time || '07:30';
+      document.getElementById('customWorkStartTime').value = config.work_start_time || '09:00';
+      document.getElementById('customLunchTime').value = config.lunch_time || '12:30';
+      document.getElementById('customWorkEndTime').value = config.work_end_time || '18:00';
+      document.getElementById('customDinnerTime').value = config.dinner_time || '18:30';
+      document.getElementById('customBedTime').value = config.bed_time || '23:00';
+      document.getElementById('customBufferMinutes').value = config.buffer_minutes || '15';
+      document.getElementById('customWorkBlock').value = config.preferred_work_block || '60';
+      document.getElementById('customExerciseDuration').value = config.exercise_duration || '45';
+      document.getElementById('customWorkLabel').value = config.work_label || '工作';
+      document.getElementById('customIncludeExercise').value = config.include_exercise || 'true';
+      document.getElementById('customExerciseTime').value = config.exercise_time || 'evening';
+      document.getElementById('customDeepWorkFirst').value = config.deep_work_first || 'true';
+      document.getElementById('customPomodoro').value = config.pomodoro_enabled || 'false';
+    }
+  } catch (e) {}
+}
+
+async function saveCustomIdentity() {
+  const data = {
+    name: document.getElementById('customIdentityName').value,
+    description: document.getElementById('customIdentityDesc').value,
+    wake_up_time: document.getElementById('customWakeUpTime').value,
+    breakfast_time: document.getElementById('customBreakfastTime').value,
+    work_start_time: document.getElementById('customWorkStartTime').value,
+    lunch_time: document.getElementById('customLunchTime').value,
+    work_end_time: document.getElementById('customWorkEndTime').value,
+    dinner_time: document.getElementById('customDinnerTime').value,
+    bed_time: document.getElementById('customBedTime').value,
+    buffer_minutes: document.getElementById('customBufferMinutes').value,
+    preferred_work_block: document.getElementById('customWorkBlock').value,
+    include_exercise: document.getElementById('customIncludeExercise').value,
+    exercise_duration: document.getElementById('customExerciseDuration').value,
+    exercise_time: document.getElementById('customExerciseTime').value,
+    deep_work_first: document.getElementById('customDeepWorkFirst').value,
+    pomodoro_enabled: document.getElementById('customPomodoro').value,
+    work_label: document.getElementById('customWorkLabel').value,
+  };
+
+  try {
+    const resp = await fetch(`${API}/api/identity/custom/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const result = await resp.json();
+    if (result.ok) {
+      showToast('自定义身份已保存并应用', 'success');
+      closeCustomIdentity();
+      currentIdentity = 'custom';
+      updateIdentityDisplay();
+    } else {
+      showToast(result.message || '保存失败', 'error');
+    }
+  } catch (e) {
+    showToast('保存失败', 'error');
+  }
+}
+
+function openCustomButlerStyle() {
+  document.getElementById('customButlerModal').classList.add('show');
+  loadCustomButlerStyle();
+}
+
+function closeCustomButler() {
+  document.getElementById('customButlerModal').classList.remove('show');
+}
+
+async function loadCustomButlerStyle() {
+  try {
+    const resp = await fetch(`${API}/api/butler/style/custom`);
+    const config = await resp.json();
+    if (config && config.name) {
+      document.getElementById('customStyleName').value = config.name || '';
+      document.getElementById('customStyleDesc').value = config.description || '';
+      document.getElementById('customGreeting').value = config.greeting || '您好，{user_name}。';
+      document.getElementById('customCallUser').value = config.call_user || '{user_name}';
+      document.getElementById('customSelfCall').value = config.self_call || '我';
+      document.getElementById('customTone').value = config.tone || 'professional';
+      document.getElementById('customEmoji').value = config.emoji || '🎩';
+      document.getElementById('customColor').value = config.color || '#000000';
+    }
+  } catch (e) {}
+}
+
+async function saveCustomButler() {
+  const data = {
+    name: document.getElementById('customStyleName').value,
+    description: document.getElementById('customStyleDesc').value,
+    greeting: document.getElementById('customGreeting').value,
+    call_user: document.getElementById('customCallUser').value,
+    self_call: document.getElementById('customSelfCall').value,
+    tone: document.getElementById('customTone').value,
+    emoji: document.getElementById('customEmoji').value,
+    color: document.getElementById('customColor').value,
+  };
+
+  try {
+    const resp = await fetch(`${API}/api/butler/style/custom/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const result = await resp.json();
+    if (result.ok) {
+      showToast('自定义管家风格已保存并应用', 'success');
+      closeCustomButler();
+      currentButlerStyle = 'custom';
+      updateButlerStyleDisplay();
+    } else {
+      showToast(result.message || '保存失败', 'error');
+    }
+  } catch (e) {
+    showToast('保存失败', 'error');
+  }
+}
+
+function openStats() {
+  document.getElementById('statsOverlay').classList.add('show');
+  document.getElementById('statsPanel').classList.add('open');
+  loadStats();
+}
+
+function closeStats() {
+  document.getElementById('statsOverlay').classList.remove('show');
+  document.getElementById('statsPanel').classList.remove('open');
+}
+
+async function loadStats() {
+  const body = document.getElementById('statsBody');
+  try {
+    const [statsResp, suggestionsResp] = await Promise.allSettled([
+      fetch(`${API}/api/stats/weekly`),
+      fetch(`${API}/api/smart/suggestions`),
+    ]);
+
+    let html = '';
+
+    if (statsResp.status === 'fulfilled' && statsResp.value.ok) {
+      const data = await statsResp.value.json();
+      const completionRate = data.summary?.completion_rate || 0;
+      html += `
+        <div class="stat-card">
+          <div class="stat-card-title">本周完成</div>
+          <div class="stat-card-value">${data.summary?.completed || 0}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">本周总计</div>
+          <div class="stat-card-value">${data.summary?.total || 0}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">完成率</div>
+          <div class="stat-card-value">${completionRate}%</div>
+        </div>`;
+      document.getElementById('weeklyCompletion').textContent = completionRate + '%';
+    }
+
+    if (suggestionsResp.status === 'fulfilled' && suggestionsResp.value.ok) {
+      const data = await suggestionsResp.value.json();
+      const suggestions = data.suggestions || [];
+      if (suggestions.length > 0) {
+        html += '<div style="margin-top:24px;"><h4 style="font-size:11px;font-weight:400;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px;">智能建议</h4>';
+        for (const suggestion of suggestions) {
+          html += `
+            <div class="theme-suggestion-card">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                <span style="font-size:16px;">${suggestion.type === 'health' ? '💪' : suggestion.type === 'rest' ? '😴' : suggestion.type === 'time_optimization' ? '⏰' : '💡'}</span>
+                <span style="font-weight:400;">${escapeHtml(suggestion.title)}</span>
+              </div>
+              <div style="font-size:12px;color:var(--text-muted);">${escapeHtml(suggestion.content)}</div>
+            </div>`;
+        }
+        html += '</div>';
+      }
+    }
+
+    body.innerHTML = html || '<div style="text-align:center;color:var(--text-muted);padding:32px;">暂无数据</div>';
+  } catch (e) {
+    body.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:32px;">加载失败</div>';
+  }
+}
+
+function openRecipes() {
+  window.location.href = '/recipes';
+}
+
+function showSection(section) {
+  document.getElementById('homeSection').classList.add('hidden');
+  document.getElementById('timelineSection').classList.add('hidden');
+
+  if (section === 'home') {
+    document.getElementById('homeSection').classList.remove('hidden');
+  } else if (section === 'timeline') {
+    document.getElementById('timelineSection').classList.remove('hidden');
+  }
+}
+
+async function loadIdentityPresets() {
+  try {
+    const [settingsResp, prefsResp] = await Promise.all([
+      fetch(`${API}/api/settings`),
+      fetch(`${API}/api/preferences`),
+    ]);
+    const settings = await settingsResp.json();
+    const prefs = await prefsResp.json();
+
+    currentIdentity = prefs.user_identity || 'worker';
+    updateIdentityDisplay();
+  } catch (e) {}
+}
+
+async function loadButlerStyles() {
+  try {
+    const resp = await fetch(`${API}/api/butler/style/config`);
+    const config = await resp.json();
+    currentButlerStyle = config.style || 'classic';
+    updateButlerStyleDisplay();
+  } catch (e) {}
+}
+
+function connectSSE() {
+  if ('EventSource' in window) {
+    const es = new EventSource(`${API}/api/sse`);
+    es.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'reminder') {
+          showNotif(data.message);
+        }
+      } catch (e) {}
+    };
+  }
+}
+
+// Initialize charts
+document.addEventListener('DOMContentLoaded', function() {
+  const chartDom = document.getElementById('wealthChart');
+  if (chartDom) {
+    const myChart = echarts.init(chartDom);
+    const option = {
+      grid: {
+        top: 10,
+        bottom: 20,
+        left: 0,
+        right: 0
+      },
+      xAxis: {
+        type: 'category',
+        data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        show: false
+      },
+      yAxis: {
+        type: 'value',
+        show: false
+      },
+      series: [{
+        data: [820, 932, 901, 934, 1290, 1330, 1320],
+        type: 'line',
+        smooth: true,
+        symbol: 'none',
+        lineStyle: {
+          color: '#000000',
+          width: 1
+        },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(0,0,0,0.1)' },
+            { offset: 1, color: 'rgba(0,0,0,0)' }
+          ])
+        }
+      }]
+    };
+    myChart.setOption(option);
+
+    window.addEventListener('resize', () => {
+      myChart.resize();
+    });
+  }
+});
+
+loadChatHistory();
+refreshAll();
+loadIdentityPresets();
+loadButlerStyles();
+setInterval(refreshAll, 30000);
+connectSSE();
+</script>
+</body>
+</html>
