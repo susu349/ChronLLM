@@ -2,7 +2,7 @@
 
 ## 概述
 
-本文档描述 Aether 系统的所有 API 接口。
+本文档描述 时灵LLM 系统的所有 API 接口。
 
 - **Base URL**: `http://localhost:8000`
 - **Content-Type**: `application/json`

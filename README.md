@@ -1,8 +1,8 @@
-# Aether - AI 个人日程管理系统
+# 时灵LLM - AI 个人日程管理系统
 
 ## 项目简介
 
-Aether 是一个基于 FastAPI 和大语言模型的智能日程管理系统，提供自然语言交互、智能规划、日程管理、数据统计等功能。
+时灵LLM 是一个基于 FastAPI 和大语言模型的智能日程管理系统，提供自然语言交互、智能规划、日程管理、数据统计等功能。
 
 ## 开源协议
 
@@ -246,6 +246,149 @@ fastapi run main.py --host 0.0.0.0 --port 8000
 
 ---
 
+## 多智能体业务流程
+
+### 系统架构
+
+```mermaid
+graph TB
+    User[用户] --> MainAgent[主Agent<br/>Main Agent]
+    
+    MainAgent --> Supervisor[监管者<br/>Supervisor]
+    MainAgent --> PlanningAgent[规划Agent<br/>Planning Agent]
+    MainAgent --> ChefAgent[厨师Agent<br/>Chef Agent]
+    MainAgent --> WeatherAgent[天气Agent<br/>Weather Agent]
+    MainAgent --> AuditAgent[审计Agent<br/>Audit Agent]
+    MainAgent --> EventHandler[事件处理Agent<br/>Event Handler]
+    
+    PlanningAgent --> TaskDecomp[任务拆解Agent<br/>Task Decomposition]
+    
+    Supervisor --> CEOAgent[CEO Agent<br/>系统优化]
+    
+    BehaviorCompress[行为压缩Agent<br/>Behavior Compression] --> ContextCompress[上下文压缩Agent<br/>Context Compression]
+    ContextCompress --> MainAgent
+```
+
+### 日常规划流程
+
+```mermaid
+sequenceDiagram
+    participant User as 用户
+    participant Main as 主Agent
+    participant Planning as 规划Agent
+    participant Audit as 审计Agent
+    participant Event as 事件处理Agent
+    participant DB as 数据库
+
+    User->>Main: "帮我规划今天"
+    Main->>Planning: 生成规划请求
+    Planning->>DB: 获取用户偏好
+    Planning->>Planning: 生成详细日程
+    Planning-->>Main: 返回规划结果
+    Main->>Audit: 审查规划合理性
+    Audit-->>Main: 审计报告
+    alt 规划通过
+        Main->>Event: 应用到日程表
+        Event->>DB: 保存事件
+        Main-->>User: 展示规划结果
+    else 规划不通过
+        Main->>Planning: 重新优化规划
+        Planning-->>Main: 新规划
+        Main-->>User: 展示优化后的规划
+    end
+```
+
+### 主动对话流程
+
+```mermaid
+flowchart TD
+    Start([用户点击开始对话]) --> Init[初始化对话状态]
+    Init --> Q1[问题1: 今天感觉怎么样?]
+    Q1 --> A1[用户回答]
+    A1 --> Extract1[提取心情状态]
+    Extract1 --> Q2[问题2: 今天最想完成什么?]
+    Q2 --> A2[用户回答]
+    A2 --> Extract2[提取主要目标]
+    Extract2 --> Q3[问题3: 工作/学习安排?]
+    Q3 --> A3[用户回答]
+    A3 --> Extract3[提取工作任务]
+    Extract3 --> Q4[问题4: 有会议/约会吗?]
+    Q4 --> A4[用户回答]
+    A4 --> Extract4[提取日程安排]
+    Extract4 --> Q5[问题5: 需要运动吗?]
+    Q5 --> A5[用户回答]
+    A5 --> Extract5[提取运动需求]
+    Extract5 --> Q6[问题6: 有紧急事项吗?]
+    Q6 --> A6[用户回答]
+    A6 --> Extract6[提取紧急事项]
+    Extract6 --> Q7[问题7: 想做什么放松?]
+    Q7 --> A7[用户回答]
+    A7 --> Extract7[提取放松活动]
+    Extract7 --> PlanGen[AI规划器生成规划]
+    PlanGen --> ApplyPlan[应用到日程表]
+    ApplyPlan --> ShowResult([展示最终规划])
+```
+
+### 智能体职责说明
+
+| 智能体 | 职责 | 触发时机 |
+|--------|------|---------|
+| **主Agent (Main)** | 接收用户请求，协调各智能体工作 | 用户交互时 |
+| **规划Agent (Planning)** | 生成每日详细规划，优化时间安排 | 规划生成请求 |
+| **任务拆解Agent** | 将大任务拆解为可执行的子任务 | 复杂任务处理 |
+| **厨师Agent (Chef)** | 推荐食谱，生成饮食计划 | 菜单查询请求 |
+| **天气Agent (Weather)** | 查询天气，提供出行建议 | 天气查询请求 |
+| **审计Agent (Audit)** | 检查规划合理性，避免冲突 | 规划生成后 |
+| **事件处理Agent** | 处理事件CRUD，状态更新 | 事件操作请求 |
+| **CEO Agent** | 系统优化，调整各Agent参数 | 定期（10天）或手动触发 |
+| **监管者 (Supervisor)** | 监控各Agent状态，协调资源 | 系统运行时 |
+| **行为压缩Agent** | 总结用户行为模式 | 每日晚间 |
+| **上下文压缩Agent** | 加载用户身份和状态 | 会话初始化时 |
+
+### CEO 优化流程
+
+```mermaid
+graph LR
+    Start([启动CEO优化]) --> Collect[收集各Agent运行数据]
+    Collect --> Analyze[分析运行质量和效率]
+    Analyze --> Evaluate[评估Agent性能评分]
+    Evaluate --> Decision{是否需要优化?}
+    Decision -->|是| Adjust[调整学习率和探索率]
+    Adjust --> Update[更新Agent配置]
+    Update --> Save[保存优化结果]
+    Decision -->|否| Skip[跳过本次优化]
+    Save --> Notify([通知优化完成])
+    Skip --> Notify
+```
+
+### 事件完成后处理流程
+
+```mermaid
+sequenceDiagram
+    participant User as 用户
+    participant Event as 事件模块
+    participant Summarizer as 自动总结器
+    participant Adjuster as 智能调整器
+    participant DB as 数据库
+
+    User->>Event: 标记事件完成
+    Event->>DB: 更新事件状态
+    Event->>Summarizer: 触发自动总结
+    Summarizer->>DB: 读取事件详情
+    Summarizer->>Summarizer: 生成完成总结
+    Summarizer->>DB: 保存总结到笔记
+    Summarizer-->>Event: 总结完成
+    Event->>Adjuster: 调整后续日程
+    Adjuster->>DB: 获取后续事件
+    Adjuster->>Adjuster: 计算时间偏差
+    Adjuster->>DB: 更新后续事件时间
+    Adjuster-->>Event: 调整完成
+    Event-->>User: 显示完成提示
+```
+
+
+---
+
 ## API 接口
 
 详细的 API 接口文档请参阅 [docs/API.md](docs/API.md)。
@@ -332,7 +475,7 @@ fastapi run main.py --host 0.0.0.0 --port 8000
 ## 版权声明
 
 ```
-Aether - AI 个人日程管理系统
+时灵LLM - AI 个人日程管理系统
 Copyright (C) 2026
 
 This program is free software: you can redistribute it and/or modify
